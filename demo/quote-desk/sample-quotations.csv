@@ -1,0 +1,16 @@
+Quote Number,Supplier Name,Project Code,Region,Category,Item,Item Description,Days,Qty,Value,Total Value,Currency
+Q-DEMO-001,Northwind Mobility,PRJ-114,Harbour,Fleet,Executive Sedan,Executive sedan 12 hrs incl driver and fuel,20,4,900,72000,AED
+Q-DEMO-001,Northwind Mobility,PRJ-114,Harbour,Fleet,Midsize SUV,Midsize SUV 12 hrs incl driver and fuel,20,6,1100,132000,AED
+Q-DEMO-001,Northwind Mobility,PRJ-114,Harbour,Fleet,Airport Transfer,One way airport transfer sedan,1,40,180,7200,AED
+Q-DEMO-001,Northwind Mobility,PRJ-114,Harbour,Fleet,Coach 30 Seater,30 seater coach 12 hrs incl driver,20,2,2400,96000,AED
+Q-DEMO-001,Northwind Mobility,PRJ-114,Harbour,Fleet,Standby Driver,Additional standby driver extra hrs,20,2,120,5000,AED
+Q-DEMO-002,Cedarline Transport,PRJ-114,Harbour,Fleet,Executive Sedan,Exec saloon twelve hour incl chauffeur and fuel,20,4,870,69600,AED
+Q-DEMO-002,Cedarline Transport,PRJ-114,Harbour,Fleet,Midsize SUV,Mid size SUV 12hrs with driver + fuel,20,6,1180,141600,AED
+Q-DEMO-002,Cedarline Transport,PRJ-114,Harbour,Fleet,Airport Transfer,Airport pick up / drop off saloon one way,1,40,165,6600,AED
+Q-DEMO-002,Cedarline Transport,PRJ-114,Harbour,Fleet,Coach 30 Seater,Coach 30 pax full day incl driver,20,2,2250,90000,AED
+Q-DEMO-003,Harbourgate Rentals,PRJ-114,Harbour,Fleet,Executive Sedan,Executive sedan daily rate 12 hours,20,4,925,74000,AED
+Q-DEMO-003,Harbourgate Rentals,PRJ-114,Harbour,Fleet,Midsize SUV,SUV midsize daily 12 hrs driver fuel included,20,6,1095,131400,AED
+Q-DEMO-003,Harbourgate Rentals,PRJ-114,Harbour,Fleet,Airport Transfer,Transfer one way sedan airport,1,40,175,7000,AED
+Q-DEMO-003,Harbourgate Rentals,PRJ-114,Harbour,Fleet,Coach 30 Seater,30 pax coach 12 hrs incl driver,20,2,2380,95200,AED
+Q-DEMO-003,Harbourgate Rentals,PRJ-114,Harbour,Fleet,Standby Driver,Standby chauffeur additional hours,20,2,135,5400,AED
+Q-DEMO-003,Harbourgate Rentals,PRJ-114,Harbour,Fleet,Meet and Greet,Airport meet and greet service,1,40,45,1800,AED

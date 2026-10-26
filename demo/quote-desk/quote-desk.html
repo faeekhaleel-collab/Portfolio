@@ -1,0 +1,2664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quote Desk — offline</title>
+<link id="qdFavicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2317907f'/%3E%3Cstop offset='55%25' stop-color='%230b5c53'/%3E%3Cstop offset='100%25' stop-color='%23052e29'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='10' fill='url(%23g)'/%3E%3Crect x='9' y='11' width='22' height='3' rx='1.5' fill='%23fff'/%3E%3Crect x='9' y='18' width='14' height='3' rx='1.5' fill='%23fff' fill-opacity='.75'/%3E%3Crect x='9' y='25' width='19' height='3' rx='1.5' fill='%23fff' fill-opacity='.55'/%3E%3C/svg%3E">
+<script>
+/* Animated favicon: mirrors the header logo's own idle / busy / clean states
+   exactly. It's self-contained and starts immediately — the main app calls
+   window.__qdFaviconMode(mode) from its own setLogo() function so the two
+   always change in lockstep, never drift out of sync. */
+(function () {
+  var link = document.getElementById("qdFavicon");
+  if (!link || !document.createElement("canvas").getContext) return;
+
+  var canvas = document.createElement("canvas");
+  canvas.width = 40; canvas.height = 40;
+  var ctx = canvas.getContext("2d");
+  var mode = "idle";
+  var frame = 0;
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function drawLine(x, y, w, h, alpha) {
+    ctx.globalAlpha = alpha;
+    roundRect(x, y, w, h, h / 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, 40, 40);
+    var g = ctx.createLinearGradient(0, 0, 40, 40);
+    g.addColorStop(0, "#17907f"); g.addColorStop(0.55, "#0b5c53"); g.addColorStop(1, "#052e29");
+    ctx.fillStyle = g;
+    roundRect(0, 0, 40, 40, 10); ctx.fill();
+    ctx.fillStyle = "#fff";
+
+    if (mode === "clean") {
+      drawLine(9, 11, 22, 3, 1);
+      drawLine(9, 18, 14, 3, 0.75);
+      var a = 0.7 + 0.3 * Math.abs(Math.sin(frame / 14));
+      ctx.strokeStyle = "rgba(143,240,212," + a + ")";
+      ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(9.5, 26.5); ctx.lineTo(14, 31); ctx.lineTo(31, 15.5);
+      ctx.stroke();
+    } else if (mode === "busy") {
+      drawLine(9, 11, 22, 3, 0.6);
+      drawLine(9, 18, 14, 3, 0.6);
+      drawLine(9, 25, 19, 3, 0.6);
+      var scanY = 8 + ((frame % 18) / 18) * 26;
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      roundRect(6, scanY, 28, 2, 1); ctx.fill();
+    } else {
+      /* idle: mirrors the header logo's real CSS exactly — ln1 and ln2
+         breathe continuously (7s cycle, ln2 delayed a quarter-cycle), ln3
+         holds steady, tick stays hidden. No word/bars swap story anymore —
+         the real animation is simpler now, so the favicon is too. */
+      var CYCLE = 54; /* ~7s at ~130ms per frame */
+      var p1 = (frame % CYCLE) / CYCLE;
+      var p2 = ((frame + CYCLE * 0.25) % CYCLE) / CYCLE;
+      var breathe = function (p) { return 1 - 0.06 * (0.5 - 0.5 * Math.cos(p * Math.PI * 2)); };
+
+      drawLine(9, 11, 22 * breathe(p1), 3, 1);
+      drawLine(9, 18, 14 * breathe(p2), 3, 0.75);
+      drawLine(9, 25, 19, 3, 0.55);
+    }
+    link.href = canvas.toDataURL("image/png");
+  }
+
+  function loop() {
+    frame++;
+    draw();
+    setTimeout(loop, mode === "busy" ? 70 : 130);
+  }
+  loop();
+
+  window.__qdFaviconMode = function (m) {
+    mode = (m === "busy" || m === "clean") ? m : "idle";
+  };
+})();
+</script>
+<style>
+:root { --ink:#e8ebf0; --ink-60:#9aa4b6; --ink-30:#5b6478; --paper:#0d1117; --surface:#161b26;
+  --surface-2:#1c2230; --rule:#2a3244; --rule-2:#232938; --blue:#17b39c; --blue-soft:rgba(23,179,156,.16); --blue-line:#1f5c53;
+  --teal:#34d399; --amber:#f2b84b; --crimson:#f87171;
+  --amber-soft:rgba(242,184,75,.15); --crimson-soft:rgba(248,113,113,.15); --teal-soft:rgba(52,211,153,.14);
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
+  --cond:var(--sans); }
+*,*::before,*::after { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:14px; line-height:1.5; padding:24px 20px 80px; }
+.wrap { max-width:1300px; margin:0 auto; }
+
+.mast { display:flex; align-items:center; justify-content:space-between; gap:20px;
+  border-bottom:1px solid var(--rule); padding-bottom:16px; margin-bottom:20px; flex-wrap:wrap; }
+.brandmark { display:flex; align-items:center; gap:12px; }
+h1 { font-family:var(--sans); font-weight:700; font-size:19px;
+  letter-spacing:-.01em; line-height:1.2; margin:0; }
+.sub { font-family:var(--sans); font-size:12.5px; letter-spacing:0; text-transform:none;
+  color:var(--ink-60); margin:2px 0 0; }
+
+/* -------- animated logo (shared with the connected build) -------- */
+.logo{width:38px;height:38px;flex-shrink:0}
+.logo svg{width:100%;height:100%;display:block;overflow:visible}
+.qd-plate{fill:url(#qdPlate)}
+.qd-gloss{fill:url(#qdGloss)}
+.qd-edge{fill:none;stroke:#fff;stroke-opacity:.16;stroke-width:1.2}
+
+.qd-shine{fill:url(#qdShine);animation:qd-shine 7s cubic-bezier(.5,0,.5,1) infinite}
+@keyframes qd-shine{
+  0%{transform:translateX(0) skewX(-14deg)}
+  62%{transform:translateX(72px) skewX(-14deg)}
+  100%{transform:translateX(72px) skewX(-14deg)}
+}
+
+.qd-scan{fill:#fff;opacity:0;transform-box:fill-box}
+.logo.busy .qd-scan{animation:qd-busy 1.1s cubic-bezier(.4,0,.3,1) infinite;opacity:.85}
+@keyframes qd-busy{
+  0%{transform:translateY(0);opacity:0}
+  15%{opacity:.9}
+  85%{opacity:.9}
+  100%{transform:translateY(17px);opacity:0}
+}
+.logo.busy .qd-shine{animation-duration:2.4s}
+
+/* "Line items" glyph: three quoted lines; the third only ever becomes a
+   checkmark once the line is actually verified — the shape itself carries
+   the meaning, not a separate icon bolted on. */
+.qd-ln{fill:#fff;transform-box:fill-box;transform-origin:left center}
+.qd-ln2{fill-opacity:.75}
+.qd-ln3{fill-opacity:.55;transition:opacity .35s ease}
+.qd-tick{fill:none;stroke:#8ff0d4;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:30.4;stroke-dashoffset:30.4;
+  transition:stroke-dashoffset .7s cubic-bezier(.2,.7,.3,1)}
+.logo .qd-ln1{animation:ln-breathe 7s ease-in-out infinite}
+.logo .qd-ln2{animation:ln-breathe 7s ease-in-out .25s infinite}
+@keyframes ln-breathe{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.94)}}
+.logo.busy .qd-ln1,.logo.busy .qd-ln2,.logo.busy .qd-ln3{animation:none;fill-opacity:.6}
+/* verified: the tick draws once and holds; the third quoted line steps aside */
+.logo.clean .qd-tick{stroke-dashoffset:0}
+.logo.clean .qd-ln3{opacity:0}
+
+@media (prefers-reduced-motion:reduce){
+  .qd-shine{animation:none;opacity:0}
+  .qd-ln1,.qd-ln2,.logo.busy .qd-ln1,.logo.busy .qd-ln2,.logo.busy .qd-ln3{animation:none}
+  .qd-scan,.logo.busy .qd-scan{animation:none;opacity:0}
+  .qd-tick{transition:none}
+  .logo.clean .qd-tick{stroke-dashoffset:0}
+}
+
+.count { font-family:var(--sans); font-size:12px; letter-spacing:0;
+  text-transform:none; color:var(--ink-60); text-align:right; }
+.count b { display:block; font-size:24px; letter-spacing:-.02em; color:var(--ink); font-weight:600; line-height:1.1; }
+
+.grid { display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:880px) { .grid { grid-template-columns:1fr; } }
+
+.panel { background:var(--surface); border:1px solid var(--rule); border-radius:10px; }
+.panel + .panel { margin-top:16px; }
+.panel-hd { font-family:var(--sans); font-size:14px; font-weight:600; letter-spacing:0;
+  text-transform:none; color:var(--ink); padding:13px 18px; border-bottom:1px solid var(--rule);
+  display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.panel-bd { padding:16px 18px; }
+
+.drop { border:2px dashed var(--rule); border-radius:10px; padding:30px 18px; text-align:center;
+  cursor:pointer; transition:border-color .15s, background .15s; background:var(--surface-2); }
+.drop:hover,.drop.on { border-color:var(--blue); background:var(--blue-soft); }
+.drop-t { font-family:var(--sans); font-weight:600; font-size:15.5px; }
+.drop-s { font-size:12.5px; color:var(--ink-60); margin-top:5px; line-height:1.5; }
+
+.field { margin-bottom:12px; }
+label.lbl,.lbl { display:block; font-family:var(--sans); font-size:11.5px; font-weight:600;
+  letter-spacing:0; text-transform:none; color:var(--ink-60); margin-bottom:5px; }
+input.inp { width:100%; border:1px solid var(--rule); border-radius:7px; padding:8px 10px;
+  font-family:var(--sans); font-size:13px; color:var(--ink); background:var(--surface); }
+input.inp:focus { outline:2px solid var(--blue); outline-offset:-1px; border-color:var(--blue); }
+.hint { font-size:12px; color:var(--ink-60); line-height:1.55; margin-top:8px; }
+
+button.btn { font-family:var(--sans); font-weight:600; font-size:13.5px;
+  letter-spacing:0; border:1px solid var(--blue); background:var(--blue); color:#fff;
+  padding:9px 16px; border-radius:7px; cursor:pointer; }
+button.btn:hover:not(:disabled) { background:#094a43; }
+button.btn:disabled { opacity:.45; cursor:not-allowed; }
+button.btn.ghost { background:var(--surface); color:var(--ink); border-color:var(--rule); }
+button.btn.ghost:hover:not(:disabled) { border-color:var(--ink-30); }
+button.btn.sm { font-size:12.5px; padding:6px 11px; }
+button:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.actions { display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+
+.seg { display:inline-flex; border:1px solid var(--rule); border-radius:7px; overflow:hidden; }
+.seg button { font-family:var(--sans); font-size:12.5px; letter-spacing:0;
+  text-transform:none; padding:6px 12px; border:0; background:transparent; color:var(--ink-60); cursor:pointer; }
+.seg button.on { background:var(--blue); color:#fff; }
+
+.file { display:flex; align-items:center; gap:9px; padding:8px 0; border-top:1px solid var(--rule-2); font-size:12.5px; }
+.file:first-child { border-top:0; }
+.file-n { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--sans); font-size:12px; }
+.dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.spin { width:12px; height:12px; border:2px solid var(--rule); border-top-color:var(--blue);
+  border-radius:50%; animation:rot .7s linear infinite; flex-shrink:0; }
+@keyframes rot { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .spin { animation-duration:2.4s; } }
+
+.stamp { display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+  padding:14px 18px; border-bottom:1px solid var(--rule); flex-wrap:wrap; }
+.stamp-no { font-family:var(--mono); font-weight:600; font-size:22px; letter-spacing:-.01em; line-height:1; }
+.stamp-sup { font-family:var(--sans); font-weight:600; font-size:14.5px; margin-top:6px; }
+.stamp-meta { font-family:var(--mono); font-size:11.5px; color:var(--ink-60); margin-top:7px; line-height:1.7; }
+.mark { border:1.5px solid var(--crimson); color:var(--crimson); font-family:var(--sans);
+  font-weight:700; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; padding:5px 10px;
+  border-radius:20px; white-space:nowrap; display:inline-block; }
+.mark.ok { border-color:var(--teal); color:var(--teal); }
+.terms { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px 18px;
+  padding:12px 18px; border-bottom:1px solid var(--rule); background:var(--surface-2); font-size:12.5px; }
+.terms div span { display:block; font-family:var(--sans); font-size:10.5px; font-weight:600;
+  letter-spacing:.04em; text-transform:uppercase; color:var(--ink-60); margin-bottom:2px; }
+
+.tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.tab { font-family:var(--sans); font-size:13px; letter-spacing:0; text-transform:none;
+  padding:7px 13px; border:1px solid var(--rule); border-radius:7px;
+  background:var(--surface); color:var(--ink-60); cursor:pointer; }
+.tab.on { border-color:var(--blue); background:var(--blue-soft); color:var(--blue); font-weight:600; }
+
+.scroll { overflow-x:auto; max-height:70vh; overflow-y:auto; }
+table.tbl { border-collapse:collapse; width:100%; font-size:13px; }
+#eqItemsTable { table-layout:fixed; }
+#eqItemsTable td { padding:0; }
+#eqItemsTable td input.inp { min-width:0; }
+#eqItemsTable td.n.mono, #eqItemsTable td[data-eq-status] { padding:8px 12px; }
+.tbl th { font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--ink-60); text-align:left; padding:10px 12px; border-bottom:1px solid var(--rule);
+  white-space:nowrap; background:var(--surface-2); position:sticky; top:0; z-index:2; }
+.tbl td { padding:8px 10px; border-bottom:1px solid var(--rule-2); vertical-align:top; line-height:1.45; }
+.tbl tbody tr:hover td { background:var(--surface-2); }
+.tbl tfoot td { border-top:1px solid var(--ink); border-bottom:0; }
+.n { font-family:var(--mono); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mono { font-family:var(--mono); font-size:12px; }
+.wide { min-width:210px; }
+.em { font-weight:700; }
+.flag { display:inline-block; font-family:var(--sans); font-size:10.5px; font-weight:600;
+  padding:1px 6px; border-radius:20px; letter-spacing:.02em; margin-left:6px; }
+.flag.calc { background:var(--blue-soft); color:var(--blue); }
+.flag.rev { background:var(--amber-soft); color:var(--amber); }
+.flag.bad { background:var(--crimson-soft); color:var(--crimson); }
+.flag.best { background:var(--teal-soft); color:var(--teal); }
+.miss { color:var(--crimson); font-family:var(--sans); font-size:12px; }
+.assumed { border-bottom:1.5px dotted var(--amber); color:var(--amber); cursor:help; }
+.gut { border-left:3px solid transparent; }
+.gut.calc { border-left-color:var(--blue); }
+.gut.rev { border-left-color:var(--amber); }
+.gut.bad { border-left-color:var(--crimson); }
+.gut.best { border-left-color:var(--teal); }
+.foot-lbl { text-align:right; font-family:var(--sans); font-size:12px;
+  letter-spacing:0; text-transform:none; color:var(--ink-60); }
+
+.cmp { border-bottom:2px solid var(--ink); }
+.cmp:last-child { border-bottom:0; }
+.cmp-hd { display:flex; align-items:baseline; gap:10px; padding:14px 18px 8px; }
+.cmp-code { font-family:var(--mono); font-weight:600; font-size:18px; letter-spacing:-.01em; }
+.cmp-read { padding:12px 18px; font-size:12.5px; line-height:1.65; background:var(--surface-2); border-top:1px solid var(--rule); }
+.warn { color:var(--amber); }
+.cmp-sub { font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-60); padding:14px 18px 4px; }
+.nq { color:var(--ink-30); font-size:11px; font-family:var(--mono); }
+.cheap { color:var(--teal); font-weight:600; }
+.clean { color:var(--teal); font-size:11.5px; }
+
+.empty { padding:50px 20px; text-align:center; color:var(--ink-60); font-size:13px; line-height:1.7; }
+.err { background:var(--crimson-soft); color:var(--crimson); border:1px solid #f0cdd2;
+  border-radius:8px; padding:11px 14px; font-size:13px; margin-bottom:14px; line-height:1.5; }
+.toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:#0a0d13;
+  color:#fff; padding:11px 20px; border-radius:8px; font-size:13.5px; z-index:90;
+  font-family:var(--sans); font-weight:600; border:1px solid var(--rule); }
+.veil { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center;
+  justify-content:center; padding:22px; z-index:60; }
+.sheet { background:var(--surface); border:1px solid var(--rule); border-radius:10px;
+  width:min(900px,100%); max-height:82vh; display:flex; flex-direction:column; overflow:hidden; }
+.sheet textarea { flex:1; min-height:240px; width:100%; border:0; resize:none; padding:12px 14px;
+  font-family:var(--mono); font-size:11.5px; line-height:1.6; color:var(--ink);
+  background:var(--surface); white-space:pre; overflow:auto; }
+.sheet textarea:focus { outline:2px solid var(--blue); outline-offset:-2px; }
+.mgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+.hidden { display:none !important; }
+details.keybox summary { font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:0;
+  text-transform:none; color:var(--ink-60); cursor:pointer; }
+
+/* ======================== opening splash (5s, skippable) ======================== */
+.qds-stage { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; }
+.qds-stage.exit { pointer-events:none; }
+.qds-bg { position:absolute; inset:0; z-index:0;
+  background:radial-gradient(ellipse at 50% 35%, #1a2130, #0a0d13 75%);
+  transition:opacity .6s ease, filter .6s ease; }
+.qds-stage.exit .qds-bg { opacity:0; filter:blur(6px); }
+.qds-skip { position:fixed; top:20px; right:24px; z-index:201; font-size:12px; color:#98a2b3;
+  font-family:var(--sans); background:none; border:0; cursor:pointer; transition:opacity .3s ease; }
+.qds-skip:hover { color:var(--ink-60); }
+.qds-skip.exit { opacity:0; pointer-events:none; }
+
+.qds-scene { width:34vmin; height:34vmin; max-width:230px; max-height:230px; perspective:1400px;
+  position:relative; z-index:1; transform-origin:center center; }
+.qds-scene.docking { transition:transform .9s cubic-bezier(.4,0,.2,1), opacity .9s cubic-bezier(.4,0,.2,1); }
+.qds-badge { width:100%; height:100%; position:relative; transform-style:preserve-3d;
+  animation:qds-spin 8s cubic-bezier(.45,0,.55,1) infinite; }
+.qds-badge.frozen { animation:none; }
+.qds-badge.enter { animation:qds-spin-in 1.15s cubic-bezier(.2,.85,.3,1.15) both,
+  qds-spin 8s cubic-bezier(.45,0,.55,1) 1.15s infinite; }
+@keyframes qds-spin-in {
+  0%{ transform:rotateY(-140deg) rotateX(7deg) scale(.4); opacity:0; }
+  55%{ opacity:1; }
+  100%{ transform:rotateY(360deg) rotateX(7deg) scale(1); opacity:1; }
+}
+@keyframes qds-spin { from{ transform:rotateY(0deg) rotateX(7deg); } to{ transform:rotateY(360deg) rotateX(7deg); } }
+
+.qds-ground { position:absolute; left:50%; bottom:-6%; width:78%; height:14%;
+  transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(6,40,36,.32), transparent 72%);
+  filter:blur(2px); z-index:0; }
+
+.qds-layer { position:absolute; inset:0; border-radius:22%; }
+.qds-front, .qds-back { display:flex; align-items:center; justify-content:center; flex-direction:column;
+  backface-visibility:hidden; overflow:hidden; }
+.qds-front { background:
+    radial-gradient(120% 90% at 22% 14%, rgba(255,255,255,.38), transparent 52%),
+    linear-gradient(152deg,#1c9985 0%,#0d6d5f 42%,#0b5c53 62%,#052e29 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); transform:translateZ(32px); }
+.qds-back { background:
+    radial-gradient(120% 90% at 78% 86%, rgba(255,255,255,.10), transparent 55%),
+    linear-gradient(152deg,#0c554a 0%,#083c34 55%,#031e1a 100%);
+  transform:rotateY(180deg) translateZ(32px); }
+.qds-specular { position:absolute; left:8%; top:6%; width:46%; height:30%; border-radius:50%;
+  background:radial-gradient(ellipse at 35% 30%, rgba(255,255,255,.55), rgba(255,255,255,0) 68%);
+  transform:translateZ(32.3px) rotate(-18deg); pointer-events:none; mix-blend-mode:screen; }
+.qds-gloss { position:absolute; inset:0; border-radius:22%;
+  background:linear-gradient(158deg, rgba(255,255,255,.20), rgba(255,255,255,0) 40%);
+  transform:translateZ(32.1px); pointer-events:none; }
+.qds-ring { position:absolute; inset:0; transform-style:preserve-3d; }
+
+.qds-lines { width:46%; }
+.qds-lines svg { display:block; width:100%; height:auto; overflow:visible; }
+.qds-lines rect { fill:#fff; transform-box:fill-box; transform-origin:left center; }
+.qds-lines .ln1 { animation:ln-breathe 8s ease-in-out infinite; }
+.qds-lines .ln2 { fill-opacity:.75; animation:ln-breathe 8s ease-in-out .25s infinite; }
+.qds-lines .ln3 { fill-opacity:.55; animation:qds-ln3-fade 8s cubic-bezier(.2,.7,.3,1) infinite; }
+@keyframes qds-ln3-fade {
+  0%,38%{ opacity:1; } 48%,100%{ opacity:0; }
+}
+.qds-lines .tick { fill:none; stroke:#8ff0d4; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:30.4; stroke-dashoffset:30.4; animation:qds-draw-tick 8s cubic-bezier(.2,.7,.3,1) infinite; }
+@keyframes qds-draw-tick {
+  0%,38%{ stroke-dashoffset:30.4; opacity:0; }
+  48%,100%{ stroke-dashoffset:0; opacity:1; }
+}
+.qds-backmark { width:40%; height:40%; }
+.qds-backmark path { fill:none; stroke:#8ff0d4; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; }
+
+.qds-caption { position:fixed; bottom:14vh; left:0; right:0; text-align:center; z-index:201;
+  font-family:var(--sans); font-size:12.5px; color:var(--ink-60); transition:opacity .5s ease; }
+.qds-caption.exit { opacity:0; }
+
+@media (prefers-reduced-motion:reduce) {
+  .qds-badge, .qds-badge.enter { animation:none; opacity:1; transform:rotateY(0deg) rotateX(7deg); }
+  .qds-lines .ln1, .qds-lines .ln2, .qds-lines .ln3, .qds-lines .tick { animation:none; }
+  .qds-lines .tick { stroke-dashoffset:0; opacity:1; }
+}
+</style>
+</head>
+<body>
+<div id="demo-ribbon" style="position:sticky;top:0;z-index:9999;padding:7px 14px;background:#d08b00;color:#141414;font:600 12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:center">
+Portfolio demo — load <strong>sample-quotations.csv</strong> (three invented suppliers) to try it. Nothing you add here leaves your browser.
+<a href="sample-quotations.csv" download style="color:inherit">Download sample</a> ·
+<a href="../../#systems" style="color:inherit">Back to portfolio</a>
+</div>
+
+<button class="qds-skip" id="qdsSkip">Skip ›</button>
+<div class="qds-stage" id="qdsStage">
+  <div class="qds-bg"></div>
+  <div class="qds-scene" id="qdsScene">
+    <div class="qds-ground"></div>
+    <div class="qds-badge enter" id="qdsBadge">
+      <div class="qds-ring" id="qdsRing"></div>
+      <div class="qds-gloss"></div>
+      <div class="qds-specular"></div>
+      <div class="qds-layer qds-front">
+        <div class="qds-lines">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <rect class="ln1" x="9" y="11" width="22" height="3" rx="1.5"/>
+            <rect class="ln2" x="9" y="18" width="14" height="3" rx="1.5"/>
+            <rect class="ln3" x="9" y="25" width="19" height="3" rx="1.5"/>
+            <path class="tick" d="M9.5 26.5 L14 31 L31 15.5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="qds-layer qds-back">
+        <svg class="qds-backmark" viewBox="0 0 40 40"><path d="M8 21 L16 29 L32 11"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="qds-caption" id="qdsCaption">Quote Desk</p>
+<script>
+/* This splash runs completely on its own, in its own script tag, before the
+   rest of the app's code even loads. That way it always shows and always
+   dismisses itself on schedule, regardless of anything that happens
+   elsewhere on the page. */
+(function () {
+  var ringEl = document.getElementById("qdsRing");
+  var stageEl = document.getElementById("qdsStage");
+  var skipEl = document.getElementById("qdsSkip");
+  var captionEl = document.getElementById("qdsCaption");
+  if (!ringEl || !stageEl || !skipEl || !captionEl) return;
+
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var STEPS = 24;
+  for (var i = 0; i <= STEPS; i++) {
+    var z = -32 + (64 * i / STEPS);
+    var layer = document.createElement("div");
+    layer.style.position = "absolute";
+    layer.style.inset = "0";
+    layer.style.borderRadius = "22%";
+    layer.style.background = "linear-gradient(150deg,#0d6c5f,#0a4a43)";
+    layer.style.transform = "translateZ(" + z.toFixed(2) + "px)";
+    layer.style.opacity = "0.9";
+    ringEl.appendChild(layer);
+  }
+
+  var dismissed = false;
+  function dismissSplash() {
+    if (dismissed) return;
+    dismissed = true;
+
+    var scene = document.getElementById("qdsScene");
+    var target = document.getElementById("logo");
+    var docked = false;
+
+    if (target && scene) {
+      var sceneRect = scene.getBoundingClientRect();
+      var targetRect = target.getBoundingClientRect();
+      if (targetRect.width > 0 && sceneRect.width > 0) {
+        var scale = targetRect.width / sceneRect.width;
+        var dx = (targetRect.left + targetRect.width / 2) - (sceneRect.left + sceneRect.width / 2);
+        var dy = (targetRect.top + targetRect.height / 2) - (sceneRect.top + sceneRect.height / 2);
+        scene.classList.add("docking");
+        void scene.offsetWidth; /* force layout so the transition applies going forward */
+        scene.style.transform = "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(" + scale.toFixed(4) + ")";
+        scene.style.opacity = "0";
+        docked = true;
+      }
+    }
+
+    stageEl.classList.add("exit");
+    skipEl.classList.add("exit");
+    captionEl.classList.add("exit");
+
+    setTimeout(function () {
+      if (stageEl.parentNode) stageEl.parentNode.removeChild(stageEl);
+      if (skipEl.parentNode) skipEl.parentNode.removeChild(skipEl);
+      if (captionEl.parentNode) captionEl.parentNode.removeChild(captionEl);
+    }, docked ? 900 : 650);
+  }
+
+  if (reduced) {
+    dismissSplash();
+  } else {
+    skipEl.addEventListener("click", dismissSplash);
+    stageEl.addEventListener("click", dismissSplash);
+    setTimeout(dismissSplash, 5000);
+  }
+})();
+</script>
+<div class="wrap">
+  <header class="mast">
+    <div class="brandmark">
+      <div class="logo" id="logo" title="Quote Desk">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <defs>
+            <linearGradient id="qdPlate" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#12776a"/>
+              <stop offset="55%" stop-color="#0b5c53"/>
+              <stop offset="100%" stop-color="#06403a"/>
+            </linearGradient>
+            <linearGradient id="qdGloss" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fff" stop-opacity=".22"/>
+              <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="qdShine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#fff" stop-opacity="0"/>
+              <stop offset="50%" stop-color="#fff" stop-opacity=".30"/>
+              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+            <clipPath id="qdClip"><rect width="40" height="40" rx="10"/></clipPath>
+          </defs>
+
+          <g clip-path="url(#qdClip)">
+            <rect class="qd-plate" width="40" height="40" rx="10"/>
+            <rect class="qd-gloss" width="40" height="22" rx="10"/>
+            <rect class="qd-shine" x="-22" y="-6" width="14" height="52"/>
+          </g>
+
+          <g class="qd-lines">
+            <rect class="qd-ln qd-ln1" x="9" y="11" width="22" height="3" rx="1.5"/>
+            <rect class="qd-ln qd-ln2" x="9" y="18" width="14" height="3" rx="1.5"/>
+            <rect class="qd-ln qd-ln3" x="9" y="25" width="19" height="3" rx="1.5"/>
+            <path class="qd-tick" d="M9.5 26.5 L14 31 L31 15.5"/>
+          </g>
+          <rect class="qd-scan" x="6" y="10" width="28" height="2" rx="1"/>
+          <rect class="qd-edge" x=".6" y=".6" width="38.8" height="38.8" rx="9.6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Quote Desk</h1>
+        <p class="sub">Team build · no AI, nothing stored centrally · your data stays in your browser</p>
+      </div>
+    </div>
+    <div class="count"><b id="rowCount">0</b><span id="quoteCount">0 quotes</span></div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="drop" id="drop">
+        <div class="drop-t">Drop a PDF, Excel, CSV or TSV</div>
+        <div class="drop-s">Everything is read here in the browser and never sent anywhere.<br>Click to choose files.</div>
+        <input type="file" id="picker" accept=".csv,.tsv,.txt,.pdf,.xlsx,.xls,.xlsm,text/csv,application/pdf" multiple class="hidden">
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd">Apply to new quotes</div>
+        <div class="panel-bd">
+          <div class="field">
+            <label class="lbl" for="defProject">Project code</label>
+            <input class="inp" id="defProject" placeholder="PRJ-001">
+          </div>
+          <div class="field">
+            <label class="lbl" for="defRegion">Region</label>
+            <input class="inp" id="defRegion" placeholder="Eastern Province">
+          </div>
+          <p class="hint">Used only where the document is silent. Anything printed in the quotation wins.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd">Enter by hand</div>
+        <div class="panel-bd">
+          <button class="btn" id="btnManual">Type or paste a quotation</button>
+          <p class="hint">
+            Paste rows straight out of Excel, or key them in. Totals, validation,
+            comparison and exports all run here in the browser.
+          </p>
+        </div>
+      </div>
+
+      <div class="panel hidden" id="jobsPanel">
+        <div class="panel-hd"><span>Reading</span><button class="btn ghost sm hidden" id="clearJobs">Clear</button></div>
+        <div class="panel-bd" style="padding-top:4px;padding-bottom:4px" id="jobsList"></div>
+      </div>
+
+      <div class="panel hidden" id="exportPanel">
+        <div class="panel-hd">Export</div>
+        <div class="panel-bd">
+          <div class="actions">
+            <button class="btn" id="btnCopy">Copy for Excel</button>
+            <button class="btn ghost" id="btnCsv">Download CSV</button>
+          </div>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn ghost sm" id="btnShow">Show data</button>
+            <button class="btn ghost sm" id="btnJson">Show JSON</button>
+          </div>
+          <p class="hint">Exports whichever column set is on screen. Format Quote Number as Text in Excel so leading zeros survive.</p>
+          <button class="btn ghost sm" style="margin-top:10px" id="btnClear">Clear dataset</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd">Backup / restore</div>
+        <div class="panel-bd">
+          <p class="hint">Everything lives only in this browser. Back it up before clearing browser
+            data, switching machines, or upgrading — this saves Master Data and everything Quote Bot
+            has learned.</p>
+          <div class="actions">
+            <button class="btn ghost sm" id="btnBackup">Export backup</button>
+            <button class="btn ghost sm" id="btnRestoreBtn">Import backup</button>
+          </div>
+          <input type="file" id="restoreFile" accept=".json,application/json" class="hidden">
+          <p class="hint" id="restoreMsg"></p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="err hidden" id="errBox"></div>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-tab="data">Line items</button>
+        <button class="tab" data-tab="quotes">Quotes</button>
+        <button class="tab" data-tab="compare">Compare</button>
+        <button class="tab" data-tab="kb">Quote Bot Knowledge</button>
+      </div>
+      <div class="panel" style="border-top-left-radius:0" id="main"></div>
+    </div>
+  </div>
+</div>
+
+<div class="veil hidden" id="manualVeil">
+  <div class="sheet">
+    <div class="panel-hd"><span id="manualTitle">Enter a quotation by hand</span>
+      <button class="btn ghost sm" id="manualClose">Close</button></div>
+    <div class="panel-bd" style="border-bottom:1px solid var(--rule)">
+      <div class="mgrid">
+        <div><span class="lbl">Quote number</span><input class="inp" id="mQuote" placeholder="QT-1001"></div>
+        <div><span class="lbl">Supplier</span><input class="inp" id="mSupplier" placeholder="ABC Trading"></div>
+        <div><span class="lbl">Project code</span><input class="inp" id="mProject" placeholder="PRJ-001"></div>
+        <div><span class="lbl">Region</span><input class="inp" id="mRegion" placeholder="Eastern Province"></div>
+        <div><span class="lbl">Currency</span><input class="inp" id="mCurrency" placeholder="SAR"></div>
+      </div>
+    </div>
+    <textarea id="mRows" placeholder="One line item per row. Tab or comma between columns — paste straight from Excel.
+
+Item&#9;Description&#9;Days&#9;Qty&#9;Value&#9;Line total (optional)
+SUV&#9;Full day 12H, Al Khobar&#9;30&#9;2&#9;1050&#9;63000
+Staria&#9;Full day 12H, Al Khobar&#9;30&#9;1&#9;900&#9;27000
+
+A header row is detected and skipped. Blank Days or Qty become 1."></textarea>
+    <div class="panel-bd" style="border-top:1px solid var(--rule)">
+      <div class="actions">
+        <button class="btn" id="manualAdd">Review before adding</button>
+        <span style="font-size:12px;color:var(--ink-60)" id="manualMsg"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="veil hidden" id="reviewVeil">
+  <div class="sheet" style="width:min(1080px,96vw); max-width:1080px">
+    <div class="panel-hd"><span>Quote Bot — review before adding to master</span>
+      <button class="btn ghost sm" id="reviewClose">Cancel</button></div>
+    <div class="panel-bd">
+      <p class="hint" id="reviewIntro"></p>
+      <div class="scroll" style="max-height:52vh">
+        <table class="tbl" id="reviewTable" style="width:100%"></table>
+      </div>
+    </div>
+    <div class="panel-bd" style="border-top:1px solid var(--rule)">
+      <div class="actions">
+        <button class="btn" id="reviewApprove">Approve &amp; add to Master Data</button>
+        <button class="btn ghost" id="reviewReject">Reject</button>
+        <span style="font-size:12px;color:var(--ink-60)" id="reviewMsg"></span>
+      </div>
+      <p class="hint">Confidence: <b style="color:var(--teal)">HIGH</b> = a mapping already known and remembered.
+        <b style="color:var(--amber)">MEDIUM</b> = matched a built-in default guess — check it.
+        <b style="color:var(--crimson)">LOW / NEEDS REVIEW</b> = nothing matched; type the correct value and
+        tick Remember so Quote Bot knows it next time.</p>
+    </div>
+  </div>
+</div>
+
+<div class="veil hidden" id="readDiffVeil">
+  <div class="sheet" style="width:min(1240px,96vw); max-width:1240px">
+    <div class="panel-hd">
+      <div>
+        <div style="font-weight:700">Read it differently</div>
+        <div class="hint" id="rdSubtitle" style="margin-top:2px"></div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost sm" id="rdCancel">Cancel</button>
+        <button class="btn sm" id="rdAdd">Add these lines</button>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <div class="mgrid" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px">
+        <div><span class="lbl">Quotation No.</span><input class="inp" id="rdQuote"></div>
+        <div><span class="lbl">Supplier</span><input class="inp" id="rdSupplier"></div>
+        <div><span class="lbl">Project code</span><input class="inp" id="rdProject"></div>
+        <div><span class="lbl">Project name</span><input class="inp" id="rdProjectName"></div>
+        <div><span class="lbl">Region</span><input class="inp" id="rdRegion"></div>
+        <div><span class="lbl">Currency</span><input class="inp" id="rdCurrency"></div>
+      </div>
+      <div class="hint" style="background:var(--amber-soft);color:var(--amber);padding:10px 12px;
+        border-radius:7px;margin-bottom:12px">
+        Set the dropdown above each column, then untick anything that is not a quoted line —
+        headings, notes, totals and payment terms.
+      </div>
+      <div class="scroll" style="max-height:52vh">
+        <table class="tbl" id="rdTable" style="width:100%"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="veil hidden" id="editQuoteVeil">
+  <div class="sheet" style="width:min(1320px,96vw); max-width:1320px">
+    <div class="panel-hd">
+      <span>Edit quote</span>
+      <div class="actions">
+        <button class="btn ghost sm" id="eqCancel">Cancel</button>
+        <button class="btn sm" id="eqSave">Save</button>
+      </div>
+    </div>
+    <div class="panel-bd" id="eqBody" style="overflow-y:auto; flex:1; min-height:0">
+      <div class="mgrid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+        <div><span class="lbl">Quotation No.</span><input class="inp" id="eqQuoteNumber"></div>
+        <div><span class="lbl">Supplier</span><input class="inp" id="eqSupplier"></div>
+        <div><span class="lbl">Customer</span><input class="inp" id="eqCustomer"></div>
+        <div><span class="lbl">Project code</span><input class="inp" id="eqProjectCode"></div>
+        <div><span class="lbl">Project name</span><input class="inp" id="eqProjectName"></div>
+        <div><span class="lbl">Region</span><input class="inp" id="eqRegion"></div>
+        <div><span class="lbl">Currency</span><input class="inp" id="eqCurrency"></div>
+        <div><span class="lbl">Reference</span><input class="inp" id="eqReference"></div>
+        <div><span class="lbl">Valid until</span><input class="inp" id="eqValidUntil"></div>
+        <div><span class="lbl">Payment terms</span><input class="inp" id="eqPaymentTerms"></div>
+        <div><span class="lbl">Delivery terms</span><input class="inp" id="eqDeliveryTerms"></div>
+        <div><span class="lbl">Delivery location</span><input class="inp" id="eqDeliveryLocation"></div>
+      </div>
+      <p class="hint" style="margin-bottom:14px">Header details above; line items below. Editing Days,
+        Qty or Unit Price recalculates the line's total and re-checks it against the supplier's
+        printed figure — it never silently accepts a number without that check.</p>
+      <table class="tbl" id="eqItemsTable" style="width:100%"></table>
+    </div>
+  </div>
+</div>
+
+<div class="veil hidden" id="veil">
+  <div class="sheet">
+    <div class="panel-hd"><span id="sheetLabel"></span><button class="btn ghost sm" id="sheetClose">Close</button></div>
+    <textarea id="sheetText" readonly></textarea>
+    <div class="panel-bd" style="border-top:1px solid var(--rule)">
+      <div class="actions">
+        <button class="btn" id="sheetCopy">Try copy again</button>
+        <span style="font-size:12px;color:var(--ink-60)" id="sheetMeta"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------ config ------------------------------ */
+
+var STORAGE_KEY = "quotedesk:dataset:v2";
+
+var MASTER_COLUMNS = ["Quote Number","Supplier Name","Project Code","Region","Category","Item",
+  "Item Description","Days","Qty","Value","Total Value"];
+
+var DETAIL_COLUMNS = ["Line No","Type","Category","Item","Vehicle (normalized)","Rate Basis",
+  "Description","Specification","Qty","Unit","Duration","Duration Unit","Rate","Discount","Tax %",
+  "Tax Amount","Line Total","Calculated Total","Calculation Status","Confidence","Remarks"];
+
+var VIEWS = {
+  master: { columns: MASTER_COLUMNS, numeric:[7,8,9,10], mono:[0,1,2,3,5], wide:[6], em:10, daysAt:7, qtyAt:8 },
+  detail: { columns: DETAIL_COLUMNS, numeric:[0,8,10,12,13,14,15,16,17,19], mono:[2,3,4,5,9,11,18],
+            wide:[6,7,20], em:16, daysAt:10, qtyAt:8 }
+};
+
+var MISSING = ["N/A","UNREADABLE","AMBIGUOUS","Not Found","Review Required",""];
+
+/* ------------------------------ state ------------------------------ */
+
+var state = { quotes: [], jobs: [], busy: false, tab: "data", view: "master" };
+
+/* ------------------------------ helpers ------------------------------ */
+
+function isNum(v) { return typeof v === "number" && !isNaN(v); }
+
+function num(v) {
+  if (isNum(v)) return v;
+  if (typeof v === "string") {
+    var c = v.replace(/[^0-9.\-]/g, "");
+    if (c !== "" && !isNaN(Number(c))) return Number(c);
+  }
+  return null;
+}
+
+function round2(n) { return Math.round(n * 100) / 100; }
+
+function totalValue(days, qty, rate) {
+  if (!isNum(days) || !isNum(qty) || !isNum(rate)) return "UNREADABLE";
+  return round2(days * qty * rate);
+}
+
+function fmtNum(v) {
+  return isNum(v) ? v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  : (v || "N/A");
+}
+
+function fmtPlain(v) { return isNum(v) ? String(v) : (v || "N/A"); }
+
+function isMissing(v) { return v === null || v === undefined || MISSING.indexOf(String(v)) !== -1; }
+
+function cellText(v) {
+  if (isNum(v)) return String(v);
+  if (v === null || v === undefined || v === "") return "N/A";
+  return String(v);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                  .replace(/"/g, "&quot;");
+}
+
+function el(id) { return document.getElementById(id); }
+
+/* storage: window.storage inside Claude, localStorage standalone, memory otherwise */
+var store = {
+  get: function (k) {
+    if (window.storage && window.storage.get) {
+      return window.storage.get(k).then(function (r) { return r ? r.value : null; })
+        .catch(function () { return null; });
+    }
+    try { return Promise.resolve(localStorage.getItem(k)); } catch (e) { return Promise.resolve(null); }
+  },
+  set: function (k, v) {
+    if (window.storage && window.storage.set) {
+      return window.storage.set(k, v).catch(function () {});
+    }
+    try { localStorage.setItem(k, v); } catch (e) {}
+    return Promise.resolve();
+  }
+};
+
+function save() { store.set(STORAGE_KEY, JSON.stringify(state.quotes)); }
+
+/* ============================================================
+   QUOTE BOT KNOWLEDGE BASE
+   A rule/lookup system, not machine learning. Every mapping here
+   was either seeded below or explicitly remembered by the user
+   after correcting a line. Stored in IndexedDB; mirrored into an
+   in-memory cache (kb.cache) so lookups during rendering stay
+   synchronous and fast.
+   ============================================================ */
+
+var KB_DB_NAME = "quotedesk-knowledge", KB_STORE = "mappings", KB_VERSION = 1;
+var kb = { cache: [], ready: null };
+
+function kbOpen(){
+  return new Promise(function(res,rej){
+    if(!window.indexedDB){ rej(new Error("IndexedDB not available in this browser")); return; }
+    var req = indexedDB.open(KB_DB_NAME, KB_VERSION);
+    req.onupgradeneeded = function(){
+      var db = req.result;
+      if(!db.objectStoreNames.contains(KB_STORE)){
+        var s = db.createObjectStore(KB_STORE, { keyPath:"id" });
+        s.createIndex("type", "type", { unique:false });
+      }
+    };
+    req.onsuccess = function(){ res(req.result); };
+    req.onerror = function(){ rej(req.error||new Error("could not open the knowledge base")); };
+  });
+}
+function kbAll(){
+  return kbOpen().then(function(db){
+    return new Promise(function(res,rej){
+      var tx = db.transaction(KB_STORE,"readonly");
+      var req = tx.objectStore(KB_STORE).getAll();
+      req.onsuccess = function(){ res(req.result||[]); };
+      req.onerror = function(){ rej(req.error); };
+    });
+  }).catch(function(){ return []; });
+}
+function kbPut(rec){
+  return kbOpen().then(function(db){
+    return new Promise(function(res,rej){
+      var tx = db.transaction(KB_STORE,"readwrite");
+      tx.objectStore(KB_STORE).put(rec);
+      tx.oncomplete = function(){ res(rec); };
+      tx.onerror = function(){ rej(tx.error); };
+    });
+  });
+}
+function kbDelete(id){
+  return kbOpen().then(function(db){
+    return new Promise(function(res,rej){
+      var tx = db.transaction(KB_STORE,"readwrite");
+      tx.objectStore(KB_STORE).delete(id);
+      tx.oncomplete = function(){ res(true); };
+      tx.onerror = function(){ rej(tx.error); };
+    });
+  });
+}
+function kbLoad(){
+  kb.ready = kbAll().then(function(rows){ kb.cache = rows; return rows; });
+  return kb.ready;
+}
+function kbRemember(type, pattern, value, supplier){
+  var rec = {
+    id: type+":"+(supplier||"*")+":"+pattern.toLowerCase().replace(/\s+/g,"_")+":"+Date.now().toString(36),
+    type: type,                       /* "vehicle" | "rate" | "location" | "supplier" */
+    supplier: supplier || null,       /* null = applies to any supplier */
+    pattern: pattern.trim(),
+    value: value.trim(),
+    learned: true,
+    created: new Date().toISOString()
+  };
+  kb.cache.push(rec);
+  return kbPut(rec);
+}
+
+/* ---- seed dictionaries: a starting point, not a claim of completeness ---- */
+var SEED_VEHICLE = [
+  [/\b(ford\s*taurus|taurus)\b/i, "Sedan (Ford Taurus class)"],
+  [/\b(toyota\s*camry|camry)\b/i, "Sedan (Toyota Camry class)"],
+  [/\b(honda\s*accord|accord)\b/i, "Sedan (Honda Accord class)"],
+  [/\b(toyota\s*hiace|hiace)\b/i, "Van (Toyota Hiace class)"],
+  [/\b(gmc\s*yukon|yukon)\b/i, "SUV (GMC Yukon class)"],
+  [/\b(chevrolet\s*suburban|suburban)\b/i, "SUV (Chevrolet Suburban class)"],
+  [/\b(toyota\s*land\s*cruiser|land\s*cruiser|lc200|lc300)\b/i, "SUV (Toyota Land Cruiser class)"],
+  [/\b(hyundai\s*staria|staria)\b/i, "Van (Hyundai Staria class)"],
+  [/\bcoaster\b/i, "Coach (23-seater class)"],
+  [/\bsprinter\b/i, "Van (Sprinter 14/16-seater class)"],
+  [/\bcoach\b/i, "Coach"],
+  [/\blimousine|limo\b/i, "Limousine"]
+];
+var SEED_RATE = [
+  [/\bextra\s*h(ou)?rs?\b|\bextra\s*h\b/i, "Extra Hour"],
+  [/\bextra\s*km\b/i, "Extra KM"],
+  [/\bwaiting\b/i, "Waiting Charge"],
+  [/\bdriver\s*charge\b/i, "Driver Charge"],
+  [/\bairport\s*transfer\b/i, "Airport Transfer"],
+  [/\bpoint\s*to\s*point\b/i, "Point-to-Point"],
+  [/\bone[\s-]*way\b/i, "One-Way"],
+  [/\breturn\b/i, "Return"],
+  [/\b12\s*h(ou)?rs?\b/i, "12 Hour"],
+  [/\b8\s*h(ou)?rs?\b/i, "8 Hour"],
+  [/\b4\s*h(ou)?rs?\b/i, "4 Hour"],
+  [/\bhalf\s*day\b/i, "Half Day"],
+  [/\bfull\s*day\b/i, "Full Day"],
+  [/\bhourly|\bper\s*hour\b/i, "Hourly"],
+  [/\bper\s*trip\b/i, "Per Trip"],
+  [/\bmonthly\b/i, "Monthly"],
+  [/\bweekly\b/i, "Weekly"],
+  [/\bdaily\b/i, "Daily"]
+];
+
+function kbMatch(type, text, supplier){
+  if(!text) return null;
+  var learned = kb.cache.filter(function(r){
+    return r.type===type && (r.supplier===supplier || !r.supplier) &&
+      text.toLowerCase().indexOf(r.pattern.toLowerCase())!==-1;
+  });
+  /* prefer a supplier-specific learned mapping over a general one */
+  learned.sort(function(a,b){ return (b.supplier?1:0)-(a.supplier?1:0); });
+  if(learned.length) return { value:learned[0].value, source:"learned" };
+  return null;
+}
+function normalizeVehicle(text, supplier){
+  if(!text || !text.trim()) return { value:"N/A", confidence:95, source:"empty" };
+  var hit = kbMatch("vehicle", text, supplier);
+  if(hit) return { value:hit.value, confidence:95, source:"learned" };
+  for(var i=0;i<SEED_VEHICLE.length;i++){
+    if(SEED_VEHICLE[i][0].test(text)) return { value:SEED_VEHICLE[i][1], confidence:75, source:"seed" };
+  }
+  return { value:"NEEDS REVIEW", confidence:40, source:"none" };
+}
+function normalizeRateType(text, supplier){
+  if(!text || !text.trim()) return { value:"N/A", confidence:95, source:"empty" };
+  var hit = kbMatch("rate", text, supplier);
+  if(hit) return { value:hit.value, confidence:95, source:"learned" };
+  for(var i=0;i<SEED_RATE.length;i++){
+    if(SEED_RATE[i][0].test(text)) return { value:SEED_RATE[i][1], confidence:75, source:"seed" };
+  }
+  return { value:"NEEDS REVIEW", confidence:40, source:"none" };
+}
+/* runs the normalization pass over one already-parsed line item */
+function normalizeItem(item, supplier){
+  var basis = (item.item_name||"")+" "+(item.description||"")+" "+(item.duration_unit||"");
+  var veh = normalizeVehicle(basis, supplier);
+  var rate = normalizeRateType(basis, supplier);
+  item.vehicle_normalized = veh.value;
+  item.rate_basis = rate.value;
+  item.vehicle_source = veh.source;
+  item.rate_source = rate.source;
+  /* overall line confidence: the lower of the two normalization confidences,
+     but never below what was already set by calculation validation */
+  var norm_conf = Math.min(veh.confidence, rate.confidence);
+  item.confidence = item.confidence===null||item.confidence===undefined ? norm_conf : Math.min(item.confidence, norm_conf);
+  return item;
+}
+
+function setLogo(mode) {
+  var l = el("logo");
+  if (window.__qdFaviconMode) window.__qdFaviconMode(mode);
+  if (!l || !l.classList) return;
+  l.classList.toggle("busy", mode === "busy");
+  l.classList.toggle("clean", mode === "clean");
+}
+function logoIdle() {
+  if (!state.quotes.length) { setLogo(""); return; }
+  var problems = records().some(function (r) { return gutterOf(r) !== ""; });
+  setLogo(problems ? "" : "clean");
+}
+
+function toast(msg) {
+  var t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function () { t.remove(); }, 2200);
+}
+
+function showError(msg) {
+  var b = el("errBox");
+  if (!msg) { b.classList.add("hidden"); return; }
+  b.textContent = msg;
+  b.classList.remove("hidden");
+}
+
+function copyText(text) {
+  var viaApi = Promise.resolve(false);
+  if (navigator.clipboard && window.isSecureContext) {
+    viaApi = navigator.clipboard.writeText(text).then(function () { return true; })
+      .catch(function () { return false; });
+  }
+  return viaApi.then(function (ok) {
+    if (ok) return true;
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-2000px";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      var done = document.execCommand("copy");
+      ta.remove();
+      return done;
+    } catch (e) { return false; }
+  });
+}
+
+function openSheet(label, text) {
+  el("sheetLabel").textContent = label;
+  el("sheetText").value = text;
+  el("sheetMeta").textContent = buildRows().length + " rows · pastes into Excel as columns";
+  el("veil").classList.remove("hidden");
+  el("sheetText").focus();
+  el("sheetText").select();
+}
+
+/* ------------------------- local PDF reading ------------------------- */
+/* The PDF is parsed by pdf.js inside this browser. The file itself is never
+   uploaded. pdf.js is loaded ONLY from pdf.min.js / pdf.worker.min.js sitting
+   beside this HTML file — no CDN, no external URL, ever, under any
+   circumstance. If those two files are not present, PDF reading fails with
+   a clear message rather than reaching out to the network. */
+
+var PDFJS_LOCAL = "pdf.min.js";
+var WORKER_LOCAL = "pdf.worker.min.js";
+
+var pdfLibPromise = null;
+
+function loadScript(src) {
+  return new Promise(function (resolve, reject) {
+    var tag = document.createElement("script");
+    tag.src = src;
+    tag.onload = function () { resolve(true); };
+    tag.onerror = function () { reject(new Error("could not load " + src)); };
+    document.head.appendChild(tag);
+  });
+}
+
+function loadPdfLib() {
+  if (pdfLibPromise) return pdfLibPromise;
+  pdfLibPromise = loadScript(PDFJS_LOCAL)
+    .then(function () {
+      if (!window.pdfjsLib) throw new Error("pdf.js did not initialise");
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_LOCAL;
+      return window.pdfjsLib;
+    })
+    .catch(function (e) {
+      pdfLibPromise = null;
+      throw new Error("PDF support needs pdf.min.js and pdf.worker.min.js in the same " +
+        "folder as this HTML file. No file was fetched from the internet — it simply " +
+        "was not found locally. See the readme.");
+    });
+  return pdfLibPromise;
+}
+
+var XLSX_LOCAL = "xlsx.full.min.js";
+var xlsxLibPromise = null;
+function loadXlsxLib() {
+  if (xlsxLibPromise) return xlsxLibPromise;
+  xlsxLibPromise = loadScript(XLSX_LOCAL)
+    .then(function () {
+      if (!window.XLSX) throw new Error("xlsx.js did not initialise");
+      return window.XLSX;
+    })
+    .catch(function (e) {
+      xlsxLibPromise = null;
+      throw new Error("Excel support needs xlsx.full.min.js in the same folder as this " +
+        "HTML file. No file was fetched from the internet — it simply was not found locally.");
+    });
+  return xlsxLibPromise;
+}
+function readExcelAsCsv(file) {
+  return loadXlsxLib().then(function (XLSX) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { res(new Uint8Array(r.result)); };
+      r.onerror = function () { rej(new Error("could not read " + file.name)); };
+      r.readAsArrayBuffer(file);
+    }).then(function (data) {
+      var wb = XLSX.read(data, { type: "array" });
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      return XLSX.utils.sheet_to_csv(sheet);
+    });
+  });
+}
+
+/* Rebuilds table rows from the text layer using the position of each fragment:
+   fragments sharing a baseline form a physical line, and horizontal gaps
+   become columns. A second pass then merges a physical line into the row
+   above it when the two don't collide (no shared non-empty column) and the
+   vertical gap is small — this is what a wrapped, multi-line table header
+   or description cell looks like, as opposed to a genuinely new row. */
+function median_(arr) {
+  var s = arr.slice().sort(function (a, b) { return a - b; });
+  var m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function splitRowLocal_(row) {
+  row = row.slice().sort(function (a, b) { return a.x - b.x; });
+
+  /* Column gaps scale with the font, so measure this row's average character
+     width and treat anything wider than about one character as a new cell.
+     A word space is narrower than that; a column gap is wider. */
+  var totalW = 0, totalChars = 0;
+  row.forEach(function (f) { totalW += f.w; totalChars += f.s.length; });
+  var charW = totalChars ? totalW / totalChars : 5;
+  var gapLimit = Math.max(2, charW * 0.9);
+
+  var cells = [{ s: row[0].s, x0: row[0].x, x1: row[0].x + row[0].w }];
+  var prevEnd = row[0].x + row[0].w;
+  for (var i = 1; i < row.length; i++) {
+    var f = row[i];
+    var gap = f.x - prevEnd;
+    if (gap > gapLimit) {
+      cells.push({ s: f.s, x0: f.x, x1: f.x + f.w });
+    } else {
+      var last = cells[cells.length - 1];
+      last.s += (gap > charW * 0.15 || /[.,]$/.test(last.s) ? " " : "") + f.s;
+      last.x1 = f.x + f.w;
+    }
+    prevEnd = f.x + f.w;
+  }
+  return cells;
+}
+function overlaps_(a, b) { return !(a.x1 < b.x0 || a.x0 > b.x1); }
+function itemsToRows(items) {
+  var frags = items.filter(function (t) {
+    return t.str && t.str.trim() !== "";
+  }).map(function (t) {
+    return { x: t.transform[4], y: t.transform[5], w: t.width || 0, s: t.str.trim() };
+  });
+  if (!frags.length) return [];
+
+  frags.sort(function (a, b) { return b.y - a.y || a.x - b.x; });
+
+  var lines = [], current = [], lastY = null;
+  frags.forEach(function (f) {
+    if (lastY === null || Math.abs(f.y - lastY) <= 3) {
+      current.push(f);
+      lastY = lastY === null ? f.y : lastY;
+    } else {
+      lines.push(current);
+      current = [f];
+      lastY = f.y;
+    }
+  });
+  if (current.length) lines.push(current);
+
+  var physRows = lines.map(function (line) { return { y: line[0].y, cells: splitRowLocal_(line) }; });
+
+  var gaps = [];
+  for (var i = 1; i < physRows.length; i++) gaps.push(physRows[i - 1].y - physRows[i].y);
+  var typicalGap = gaps.length ? median_(gaps) : 14;
+
+  var logical = [];
+  physRows.forEach(function (pr) {
+    if (logical.length) {
+      var prev = logical[logical.length - 1];
+      var gap = prev._lastY - pr.y;
+      var collide = pr.cells.some(function (c) {
+        return prev.cells.some(function (pc) { return overlaps_(c, pc) && pc.s !== ""; });
+      });
+      if (!collide && gap > 0 && gap < typicalGap * 1.7) {
+        pr.cells.forEach(function (c) {
+          var target = null;
+          for (var k = 0; k < prev.cells.length; k++) { if (overlaps_(c, prev.cells[k])) { target = prev.cells[k]; break; } }
+          if (target) { target.s = target.s ? target.s + " " + c.s : c.s; target.x0 = Math.min(target.x0, c.x0); target.x1 = Math.max(target.x1, c.x1); }
+          else { prev.cells.push(c); prev.cells.sort(function (a, b) { return a.x0 - b.x0; }); }
+        });
+        prev._lastY = pr.y;
+        return;
+      }
+    }
+    logical.push({ cells: pr.cells.map(function (c) { return { s: c.s, x0: c.x0, x1: c.x1 }; }), _lastY: pr.y });
+  });
+
+  return logical.map(function (r) { return r.cells.map(function (c) { return c.s.replace(/\s+/g, " ").trim(); }); })
+    .filter(function (cells) { return cells.join("").trim() !== ""; });
+}
+
+function readPdf(file) {
+  return loadPdfLib().then(function (pdfjsLib) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(new Uint8Array(r.result)); };
+      r.onerror = function () { reject(new Error("could not read the file")); };
+      r.readAsArrayBuffer(file);
+    }).then(function (bytes) {
+      return pdfjsLib.getDocument({ data: bytes }).promise;
+    });
+  }).then(function (doc) {
+    var pages = [];
+    for (var p = 1; p <= doc.numPages; p++) pages.push(p);
+    return pages.reduce(function (chain, p) {
+      return chain.then(function (acc) {
+        return doc.getPage(p).then(function (page) {
+          return page.getTextContent();
+        }).then(function (tc) {
+          return acc.concat(itemsToRows(tc.items));
+        });
+      });
+    }, Promise.resolve([]));
+  }).then(function (rows) {
+    if (!rows.length)
+      throw new Error("no text layer — this looks like a scan, which needs the connected build");
+    return rows;
+  });
+}
+
+/* --------------------------- local file reading --------------------------- */
+/* Nothing here leaves the browser: files are read with FileReader and parsed
+   in place. There is no fetch call anywhere in this build. */
+
+function splitCsvLine(line, delim) {
+  var out = [], cur = "", inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (inQ) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') inQ = false;
+      else cur += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === delim) { out.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(function (c) { return c.trim(); });
+}
+
+var HEADER_MAP = {
+  quotenumber:"quote", quoteno:"quote", quotationnumber:"quote", quotationno:"quote",
+  suppliername:"supplier", supplier:"supplier", vendor:"supplier",
+  projectcode:"project", project:"project",
+  region:"region", location:"region",
+  category:"category", type:"type",
+  item:"item", itemname:"item", itemcode:"item", description1:"item",
+  itemdescription:"description", description:"description", particulars:"description",
+  specification:"spec", spec:"spec",
+  days:"days", duration:"days", period:"days", nights:"days",
+  qty:"qty", quantity:"qty", units:"qty",
+  unit:"unit", uom:"unit",
+  value:"rate", rate:"rate", unitrate:"rate", unitprice:"rate", price:"rate",
+  totalvalue:"total", linetotal:"total", amount:"total", lineamount:"total", netamount:"total", total:"total",
+  currency:"currency"
+};
+
+function normHeader(h) {
+  return String(h).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function parseTable(text, filename) {
+  var lines = text.replace(/\r/g, "").split("\n").filter(function (l) { return l.trim() !== ""; });
+  if (!lines.length) throw new Error("empty file");
+
+  var delim = lines[0].indexOf("\t") !== -1 ? "\t" : ",";
+  var header = splitCsvLine(lines[0], delim).map(normHeader);
+  var idx = {};
+  header.forEach(function (h, i) {
+    var key = HEADER_MAP[h];
+    if (key && idx[key] === undefined) idx[key] = i;
+  });
+
+  if (idx.rate === undefined && idx.total === undefined)
+    throw new Error("no Value or Total Value column found");
+
+  function get(cells, key) {
+    return idx[key] === undefined ? "" : (cells[idx[key]] || "");
+  }
+
+  var groups = {};
+  lines.slice(1).forEach(function (line) {
+    var c = splitCsvLine(line, delim);
+    var quoteNo = get(c, "quote") || "N/A";
+    var supplier = get(c, "supplier") || "N/A";
+    var gk = quoteNo + "||" + supplier;
+    if (!groups[gk]) groups[gk] = { quoteNo: quoteNo, supplier: supplier, rows: [] };
+    groups[gk].rows.push(c);
+  });
+
+  return Object.keys(groups).map(function (gk) {
+    var g = groups[gk];
+    var exceptions = [];
+
+    var items = g.rows.map(function (c, i) {
+      var days = num(get(c, "days"));
+      var qty = num(get(c, "qty"));
+      var rate = num(get(c, "rate"));
+      var printed = num(get(c, "total"));
+
+      /* Only a total and no rate? Recover the rate rather than mislabelling it. */
+      var derived = false;
+      if (rate === null && printed !== null) {
+        var d = days === null ? 1 : days, q = qty === null ? 1 : qty;
+        if (d * q !== 0) { rate = round2(printed / (d * q)); derived = true; }
+      }
+
+      var row = {
+        line_number: i + 1,
+        type: get(c, "type") || "Unknown",
+        category: get(c, "category") || "Other",
+        item_name: get(c, "item") || "N/A",
+        description: get(c, "description") || "N/A",
+        specification: get(c, "spec") || "N/A",
+        unit: get(c, "unit") || "N/A",
+        duration_unit: days !== null ? "Days" : "N/A",
+        discount: 0, tax_rate: null, tax_amount: null, confidence: null,
+        remarks: derived ? "Rate derived from the total." : "Imported from " + filename + ".",
+        page: 0,
+        line_total: printed !== null ? printed : "N/A",
+        rate: rate !== null ? rate : "UNREADABLE",
+        qty: qty !== null ? qty : 1,
+        days: days !== null ? days : 1,
+        qtyAssumed: qty === null,
+        daysAssumed: days === null
+      };
+
+      row.calculated_total = totalValue(row.days, row.qty, row.rate);
+      if (isNum(row.calculated_total) && isNum(printed)) {
+        var diff = Math.abs(row.calculated_total - printed);
+        row.calculation_status = diff < 0.01 ? "MATCH" : (diff <= 1 ? "MINOR_DIFFERENCE" : "MISMATCH");
+      } else {
+        row.calculation_status = "NOT_CALCULABLE";
+      }
+      if (row.calculation_status === "MISMATCH")
+        exceptions.push("Line " + row.line_number + " (" + row.item_name + "): calculated " +
+          fmtNum(row.calculated_total) + " against imported " + fmtNum(printed) + ".");
+      normalizeItem(row, g.supplier);
+      return row;
+    });
+
+    var dd = items.filter(function (i) { return i.daysAssumed; }).length;
+    var dq = items.filter(function (i) { return i.qtyAssumed; }).length;
+    if (dd) exceptions.push(dd + " line(s) had no duration — set to 1.");
+    if (dq) exceptions.push(dq + " line(s) had no quantity — set to 1.");
+
+    var first = g.rows[0];
+    function firstOr(key, fallback) { return get(first, key) || fallback; }
+
+    return {
+      id: "import:" + Date.now() + ":" + Math.random().toString(36).slice(2, 7),
+      attachment: filename,
+      quoteNumber: g.quoteNo,
+      supplier: g.supplier,
+      customer: "N/A", projectName: "N/A",
+      projectCode: firstOr("project", el("defProject").value.trim() || "N/A"),
+      region: firstOr("region", el("defRegion").value.trim() || "N/A"),
+      reference: "N/A", validUntil: "N/A",
+      currency: firstOr("currency", "N/A"),
+      paymentTerms: "N/A", deliveryTerms: "N/A", deliveryLocation: "N/A",
+      subtotal: null, discountTotal: null, vatRate: null, vatAmount: null,
+      additionalCharges: null, grandTotal: null,
+      totalStatus: "NOT_CALCULABLE",
+      needsReview: exceptions.length > 0,
+      exceptions: exceptions,
+      items: items
+    };
+  });
+}
+
+function readText(file) {
+  return new Promise(function (resolve, reject) {
+    var r = new FileReader();
+    r.onload = function () { resolve(String(r.result)); };
+    r.onerror = function () { reject(new Error("could not read the file")); };
+    r.readAsText(file);
+  });
+}
+
+function handleFiles(fileList) {
+  setLogo("busy");
+  var files = Array.prototype.slice.call(fileList).filter(function (f) {
+    var ext = (f.name.split(".").pop() || "").toLowerCase();
+    return ["csv","tsv","txt","pdf","xlsx","xls","xlsm"].indexOf(ext) !== -1 ||
+      (f.type || "").indexOf("text") === 0 || f.type === "application/pdf";
+  });
+  if (!files.length) {
+    showError("This build reads PDF, Excel, CSV and TSV. For anything else, use Type or paste a quotation.");
+    logoIdle();
+    return;
+  }
+
+  var pdfs = files.filter(function (f) {
+    return (f.name.split(".").pop() || "").toLowerCase() === "pdf" || f.type === "application/pdf";
+  });
+  files = files.filter(function (f) { return pdfs.indexOf(f) === -1; });
+
+  if (pdfs.length) {
+    if (pdfs.length > 1)
+      showError("PDFs are reviewed one at a time. Reading " + pdfs[0].name + " first.");
+    state.jobs = [{ name: pdfs[0].name, state: "working" }];
+    renderJobs();
+    readPdf(pdfs[0]).then(function (rows) {
+      state.jobs[0].state = "done";
+      renderJobs();
+      logoIdle();
+      openReadDifferently(pdfs[0].name, rows);
+    }).catch(function (e) {
+      state.jobs[0].state = "failed";
+      state.jobs[0].msg = e.message;
+      renderJobs();
+      logoIdle();
+      showError(e.message);
+    });
+    if (!files.length) return;
+  }
+  showError("");
+  state.busy = true;
+  state.jobs = files.map(function (f) { return { name: f.name, state: "queued" }; });
+  renderJobs();
+
+  function readAny(file){
+    var ext = (file.name.split(".").pop()||"").toLowerCase();
+    if(["xlsx","xls","xlsm"].indexOf(ext)!==-1) return readExcelAsCsv(file);
+    return readText(file);
+  }
+
+  var chain = Promise.resolve();
+  files.forEach(function (file, i) {
+    chain = chain.then(function () {
+      state.jobs[i].state = "working";
+      renderJobs();
+      return readAny(file).then(function (text) {
+        var quotes = parseTable(text, file.name);
+        quotes.forEach(function (q) {
+          if (needsReview(q)) openReview(q); else state.quotes.push(q);
+        });
+        state.jobs[i].state = "done";
+        save();
+        renderJobs();
+        renderMain();
+      }).catch(function (e) {
+        state.jobs[i].state = "failed";
+        state.jobs[i].msg = e.message;
+        renderJobs();
+      });
+    });
+  });
+  chain.then(function () {
+    state.busy = false;
+    state.tab = "data";
+    renderJobs();
+    renderAll();
+  });
+}
+
+/* ------------------------------ derived ------------------------------ */
+
+function records() {
+  var out = [];
+  state.quotes.forEach(function (q) {
+    q.items.forEach(function (it) { out.push({ q:q, it:it }); });
+  });
+  return out;
+}
+
+function masterCells(r) {
+  return [r.q.quoteNumber, r.q.supplier, r.q.projectCode, r.q.region, r.it.category,
+    r.it.item_name, r.it.description, r.it.days, r.it.qty, r.it.rate, r.it.calculated_total];
+}
+
+function detailCells(r) {
+  var it = r.it;
+  return [it.line_number, it.type, it.category, it.item_name, it.vehicle_normalized||"N/A",
+    it.rate_basis||"N/A", it.description, it.specification,
+    it.qty, it.unit, it.days, it.duration_unit, it.rate, it.discount, it.tax_rate, it.tax_amount,
+    it.line_total, it.calculated_total, it.calculation_status, it.confidence, it.remarks];
+}
+
+function rowsData() {
+  var cellsOf = state.view === "master" ? masterCells : detailCells;
+  return records().map(function (r) {
+    return { cells: cellsOf(r), status: r.it.calculation_status, daysAssumed: r.it.daysAssumed,
+             qtyAssumed: r.it.qtyAssumed, confidence: r.it.confidence };
+  });
+}
+
+function gutterOf(r) {
+  if (r.status === "MISMATCH") return "bad";
+  if (r.status === "MINOR_DIFFERENCE") return "rev";
+  if (r.status === "NOT_CALCULABLE") return "calc";
+  if (isNum(r.confidence) && r.confidence < 70) return "rev";
+  return "";
+}
+
+function normKey(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function comparison() {
+  var projects = {};
+  records().forEach(function (rec) {
+    var q = rec.q, it = rec.it;
+    var pc = isMissing(q.projectCode) ? "Unassigned" : q.projectCode;
+    if (!projects[pc]) projects[pc] = { code:pc, suppliers:{}, items:{} };
+    var p = projects[pc];
+    if (!p.suppliers[q.supplier])
+      p.suppliers[q.supplier] = { name:q.supplier, quotes:{}, currencies:{}, total:0, lines:0,
+                                  flagged:0, unpriced:0 };
+    var s = p.suppliers[q.supplier];
+    s.quotes[q.quoteNumber] = 1;
+    s.currencies[q.currency] = 1;
+    s.lines++;
+    if (isNum(it.calculated_total)) s.total += it.calculated_total; else s.unpriced++;
+    if (it.calculation_status === "MISMATCH" || (isNum(it.confidence) && it.confidence < 70)) s.flagged++;
+
+    var key = normKey(it.item_name) + "|" + normKey(it.category);
+    if (!p.items[key]) p.items[key] = { label:it.item_name, category:it.category, bySupplier:{} };
+    if (!p.items[key].bySupplier[q.supplier])
+      p.items[key].bySupplier[q.supplier] = { rate:it.rate, unit:it.unit };
+  });
+
+  return Object.keys(projects).map(function (code) {
+    var p = projects[code];
+    var suppliers = Object.keys(p.suppliers).map(function (k) { return p.suppliers[k]; })
+      .sort(function (a, b) { return a.total - b.total; });
+    var items = Object.keys(p.items).map(function (k) { return p.items[k]; })
+      .filter(function (i) { return Object.keys(i.bySupplier).length > 1; })
+      .map(function (i) {
+        var rates = Object.keys(i.bySupplier).map(function (k) { return i.bySupplier[k].rate; })
+          .filter(isNum);
+        i.cheapest = rates.length ? Math.min.apply(null, rates) : null;
+        return i;
+      });
+    var lineCounts = {}, currencies = {};
+    suppliers.forEach(function (s) {
+      lineCounts[s.lines] = 1;
+      Object.keys(s.currencies).forEach(function (c) { currencies[c] = 1; });
+    });
+    return { code:code, suppliers:suppliers, items:items,
+      scopeDiffers: Object.keys(lineCounts).length > 1,
+      anyUnpriced: suppliers.some(function (s) { return s.unpriced > 0; }),
+      mixedCurrency: Object.keys(currencies).length > 1 };
+  }).filter(function (p) { return p.suppliers.length > 1; });
+}
+
+/* ------------------------------ export ------------------------------ */
+
+function buildRows() { return rowsData().map(function (r) { return r.cells.map(cellText); }); }
+
+function tsvForQuote(quoteId) {
+  var q = state.quotes.find(function (x) { return x.id === quoteId; });
+  if (!q) return "";
+  var cellsOf = state.view === "master" ? masterCells : detailCells;
+  var cols = VIEWS[state.view].columns;
+  var rows = q.items.map(function (it) { return cellsOf({ q:q, it:it }).map(cellText); });
+  return [cols.join("\t")].concat(rows.map(function (r) {
+    return r.map(function (c) { return c.replace(/\t|\n/g, " "); }).join("\t");
+  })).join("\n");
+}
+
+function asTsv() {
+  var cols = VIEWS[state.view].columns;
+  return [cols.join("\t")].concat(buildRows().map(function (r) {
+    return r.map(function (c) { return c.replace(/\t|\n/g, " "); }).join("\t");
+  })).join("\n");
+}
+
+function asCsv() {
+  var cols = VIEWS[state.view].columns;
+  function q(c) { return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }
+  return [cols.join(",")].concat(buildRows().map(function (r) {
+    return r.map(q).join(",");
+  })).join("\r\n");
+}
+
+function asJson() {
+  return JSON.stringify(state.quotes.map(function (q) {
+    return {
+      quotation: {
+        quotation_number: q.quoteNumber, quotation_valid_until: q.validUntil,
+        supplier_name: q.supplier, customer_name: q.customer, project_name: q.projectName,
+        project_code: q.projectCode, region: q.region, reference_number: q.reference,
+        currency: q.currency, payment_terms: q.paymentTerms, delivery_terms: q.deliveryTerms,
+        delivery_location: q.deliveryLocation, subtotal: q.subtotal, discount_total: q.discountTotal,
+        vat_rate: q.vatRate, vat_amount: q.vatAmount, additional_charges: q.additionalCharges,
+        grand_total: q.grandTotal, total_validation_status: q.totalStatus
+      },
+      items: q.items,
+      validation: { line_items_count: q.items.length, requires_human_review: q.needsReview,
+                    exceptions: q.exceptions }
+    };
+  }), null, 2);
+}
+
+/* ------------------------------ render ------------------------------ */
+
+function renderCounts() {
+  el("rowCount").textContent = records().length;
+  el("quoteCount").textContent = "line items · " + state.quotes.length +
+    " quote" + (state.quotes.length === 1 ? "" : "s");
+}
+
+function renderJobs() {
+  var panel = el("jobsPanel");
+  if (!state.jobs.length) { panel.classList.add("hidden"); return; }
+  panel.classList.remove("hidden");
+  el("clearJobs").classList.toggle("hidden", state.busy);
+  el("jobsList").innerHTML = state.jobs.map(function (j) {
+    var badge = j.state === "working" ? '<span class="spin"></span>' :
+      '<span class="dot" style="background:' +
+      (j.state === "done" ? "#0f766e" : j.state === "failed" ? "#98183a" : "#9aa3b4") + '"></span>';
+    return '<div class="file">' + badge +
+      '<span class="file-n" title="' + esc(j.name) + '">' + esc(j.name) + '</span>' +
+      '<span style="font-size:11px;color:' + (j.state === "failed" ? "#98183a" : "#5a6478") + '">' +
+      esc(j.state === "failed" ? (j.msg || "failed") : j.state) + '</span></div>';
+  }).join("");
+}
+
+function renderTabs() {
+  var pending = state.quotes.filter(function (q) {
+    return isMissing(q.projectCode) || isMissing(q.region);
+  }).length;
+  var cmp = comparison().length;
+  Array.prototype.forEach.call(el("tabs").children, function (b) {
+    var t = b.getAttribute("data-tab");
+    b.classList.toggle("on", state.tab === t);
+    if (t === "quotes") b.textContent = "Quotes" + (pending ? " · " + pending + " to complete" : "");
+    if (t === "compare") b.textContent = "Compare" + (cmp ? " · " + cmp : "");
+  });
+}
+
+function renderTable() {
+  var spec = VIEWS[state.view];
+  var rows = rowsData();
+  var grand = 0;
+  records().forEach(function (r) {
+    if (isNum(r.it.calculated_total)) grand += r.it.calculated_total;
+  });
+
+  var head = spec.columns.map(function (c, i) {
+    return '<th' + (spec.numeric.indexOf(i) !== -1 ? ' class="n"' : '') + '>' + esc(c) + '</th>';
+  }).join("");
+
+  var body = rows.map(function (r) {
+    var gut = gutterOf(r);
+    var tds = r.cells.map(function (c, k) {
+      var cls = [];
+      if (k === 0) cls.push("gut", gut);
+      if (spec.numeric.indexOf(k) !== -1) cls.push("n");
+      if (spec.mono.indexOf(k) !== -1) cls.push("mono");
+      if (spec.wide.indexOf(k) !== -1) cls.push("wide");
+      if (k === spec.em) cls.push("em");
+
+      var assumed = (k === spec.daysAt && r.daysAssumed) || (k === spec.qtyAt && r.qtyAssumed);
+      var money = spec.numeric.indexOf(k) !== -1 && k !== spec.daysAt && k !== spec.qtyAt;
+      var inner;
+      if (assumed)
+        inner = '<span class="assumed" title="Not stated in the quotation — set to 1">' +
+                esc(fmtPlain(c)) + '</span>';
+      else if (isMissing(c)) inner = '<span class="miss">' + esc(c || "N/A") + '</span>';
+      else inner = esc(money ? fmtNum(c) : fmtPlain(c));
+
+      if (k === spec.em && gut === "bad") inner += '<span class="flag bad">mismatch</span>';
+      else if (k === spec.em && gut === "rev") inner += '<span class="flag rev">check</span>';
+
+      return '<td class="' + cls.join(" ") + '">' + inner + '</td>';
+    }).join("");
+    return "<tr>" + tds + "</tr>";
+  }).join("");
+
+  return '<div class="panel-hd"><span>' + spec.columns.length + " columns · " + rows.length +
+    ' rows</span><span class="seg">' +
+    '<button data-view="master" class="' + (state.view === "master" ? "on" : "") + '">Master</button>' +
+    '<button data-view="detail" class="' + (state.view === "detail" ? "on" : "") + '">Full detail</button>' +
+    '</span></div><div class="scroll"><table class="tbl"><thead><tr>' + head +
+    '</tr></thead><tbody>' + body + '</tbody><tfoot><tr>' +
+    '<td class="foot-lbl" colspan="' + (spec.columns.length - 1) + '">Sum of calculated totals</td>' +
+    '<td class="n em">' + esc(fmtNum(grand)) + '</td></tr></tfoot></table></div>';
+}
+
+function renderQuotes() {
+  return state.quotes.map(function (q) {
+    return '<div>' +
+      '<div class="stamp">' +
+        '<div style="min-width:200px">' +
+          '<div class="stamp-no">' + esc(q.quoteNumber) + '</div>' +
+          '<div class="stamp-sup">' + esc(q.supplier) + '</div>' +
+          '<div class="stamp-meta">' + esc(q.currency) + ' · ' + q.items.length + ' item' +
+            (q.items.length === 1 ? "" : "s") + '<br>subtotal ' + esc(fmtNum(q.subtotal)) +
+            ' · VAT ' + esc(fmtNum(q.vatAmount)) + '<br>grand total ' + esc(fmtNum(q.grandTotal)) +
+            ' · ' + esc(q.totalStatus) + '<br>' + esc(q.attachment) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:9px;min-width:210px">' +
+          '<div><span class="lbl">Project code</span>' +
+            '<input class="inp" data-edit="projectCode" data-id="' + esc(q.id) + '" placeholder="N/A" value="' +
+            esc(isMissing(q.projectCode) ? "" : q.projectCode) + '"></div>' +
+          '<div><span class="lbl">Region</span>' +
+            '<input class="inp" data-edit="region" data-id="' + esc(q.id) + '" placeholder="N/A" value="' +
+            esc(isMissing(q.region) ? "" : q.region) + '"></div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px">' +
+          '<span class="mark' + (q.needsReview ? "" : " ok") + '">' +
+            (q.needsReview ? "Check" : "Verified") + '</span>' +
+          '<div class="actions">' +
+            '<button class="btn ghost sm" data-edit-quote="' + esc(q.id) + '">Edit</button>' +
+            '<button class="btn ghost sm" data-copy-quote="' + esc(q.id) + '">Copy this quote</button>' +
+            '<button class="btn ghost sm" data-remove="' + esc(q.id) + '">Remove</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="terms">' +
+        '<div><span>Customer</span>' + esc(q.customer) + '</div>' +
+        '<div><span>Project</span>' + esc(q.projectName) + '</div>' +
+        '<div><span>Reference</span>' + esc(q.reference) + '</div>' +
+        '<div><span>Valid until</span>' + esc(q.validUntil) + '</div>' +
+        '<div><span>Payment terms</span>' + esc(q.paymentTerms) + '</div>' +
+        '<div><span>Delivery terms</span>' + esc(q.deliveryTerms) + '</div>' +
+        '<div><span>Delivery location</span>' + esc(q.deliveryLocation) + '</div>' +
+      '</div></div>';
+  }).join("");
+}
+
+function renderCompare() {
+  var cmp = comparison();
+  if (!cmp.length)
+    return '<div class="empty">Nothing to compare yet.<br>' +
+      'Two or more suppliers need to share a project code before they can be ranked.</div>';
+
+  return cmp.map(function (p) {
+    var lowest = p.suppliers[0], runnerUp = p.suppliers[1];
+    var gap = runnerUp ? runnerUp.total - lowest.total : 0;
+    var gapPct = runnerUp && runnerUp.total ? (gap / runnerUp.total) * 100 : 0;
+
+    var supRows = p.suppliers.map(function (s, i) {
+      var quality;
+      if (s.flagged === 0 && s.unpriced === 0) quality = '<span class="clean">Clean</span>';
+      else quality = (s.flagged ? '<span class="flag rev" style="margin-left:0">' + s.flagged +
+                      ' to check</span>' : '') +
+                     (s.unpriced ? '<span class="flag bad">' + s.unpriced + ' unpriced</span>' : '');
+      return '<tr><td class="gut ' + (i === 0 ? "best" : "") + '"><strong>' + esc(s.name) +
+        '</strong>' + (i === 0 ? '<span class="flag best">Lowest total</span>' : '') + '</td>' +
+        '<td class="mono">' + esc(Object.keys(s.quotes).join(", ")) + '</td>' +
+        '<td class="n">' + s.lines + '</td>' +
+        '<td class="n em">' + esc(fmtNum(s.total)) + '</td>' +
+        '<td class="n">' + (i === 0 ? "—" : "+" + esc(fmtNum(s.total - lowest.total))) + '</td>' +
+        '<td>' + quality + '</td></tr>';
+    }).join("");
+
+    var read = '<strong>' + esc(lowest.name) + '</strong> is lowest on total value' +
+      (runnerUp ? " by " + esc(fmtNum(gap)) + " (" + gapPct.toFixed(1) + "%) against " +
+        esc(runnerUp.name) : "") + "." +
+      (p.scopeDiffers ? '<span class="warn"> Suppliers quoted different numbers of lines, so these ' +
+        'totals do not cover the same scope. Compare the matching items below before deciding.</span>' : "") +
+      (p.mixedCurrency ? '<span class="warn"> More than one currency appears here — these totals ' +
+        'are not directly comparable.</span>' : "") +
+      (p.anyUnpriced ? '<span class="warn"> Some lines have no usable rate and are excluded from ' +
+        'these totals.</span>' : "");
+
+    var itemTable = "";
+    if (p.items.length) {
+      var heads = p.suppliers.map(function (s) { return '<th class="n">' + esc(s.name) + '</th>'; }).join("");
+      var body = p.items.map(function (it) {
+        var cells = p.suppliers.map(function (s) {
+          var e = it.bySupplier[s.name];
+          if (!e) return '<td class="n"><span class="nq">not quoted</span></td>';
+          var best = isNum(e.rate) && e.rate === it.cheapest;
+          return '<td class="n' + (best ? " cheap" : "") + '">' + esc(fmtNum(e.rate)) + '</td>';
+        }).join("");
+        return '<tr><td><strong>' + esc(it.label) + '</strong></td><td class="mono">' +
+          esc(it.category) + '</td>' + cells + '</tr>';
+      }).join("");
+      itemTable = '<div class="cmp-sub">Same item, side by side — unit rate</div>' +
+        '<div class="scroll"><table class="tbl"><thead><tr><th>Item</th><th>Category</th>' +
+        heads + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+    }
+
+    return '<div class="cmp"><div class="cmp-hd"><span class="lbl" style="margin:0">Project</span>' +
+      '<span class="cmp-code">' + esc(p.code) + '</span></div>' +
+      '<table class="tbl"><thead><tr><th>Supplier</th><th>Quote</th><th class="n">Lines</th>' +
+      '<th class="n">Total value</th><th class="n">Vs lowest</th><th>Data quality</th></tr></thead>' +
+      '<tbody>' + supRows + '</tbody></table>' +
+      '<div class="cmp-read">' + read + '</div>' + itemTable + '</div>';
+  }).join("");
+}
+
+function renderKb() {
+  var term = (state.kbSearch||"").toLowerCase();
+  var rows = kb.cache.filter(function (r) {
+    if (!term) return true;
+    return (r.pattern+" "+r.value+" "+(r.supplier||"")).toLowerCase().indexOf(term)!==-1;
+  }).sort(function (a,b) { return (b.created||"").localeCompare(a.created||""); });
+
+  var body = rows.map(function (r) {
+    return '<tr>'+
+      '<td class="mono">'+esc(r.type)+'</td>'+
+      '<td class="mono">'+esc(r.supplier||"any supplier")+'</td>'+
+      '<td>'+esc(r.pattern)+'</td>'+
+      '<td class="wide">'+esc(r.value)+'</td>'+
+      '<td><button class="btn ghost sm" data-kb-del="'+esc(r.id)+'">Delete</button></td>'+
+    '</tr>';
+  }).join("");
+
+  return '<div class="panel-hd"><span>Quote Bot Knowledge — '+kb.cache.length+' mapping(s) learned</span></div>'+
+    '<div class="panel-bd">'+
+    '<p class="hint">This is a rule/lookup system, not machine learning. Every mapping here was either '+
+    'built in, or explicitly remembered by you after approving a correction on the review screen. '+
+    'You can also add one directly below.</p>'+
+    '<div class="mgrid" style="margin-bottom:10px">'+
+      '<div><span class="lbl">Type</span><select class="inp" id="kbType">'+
+        '<option value="vehicle">Vehicle / service</option><option value="rate">Rate type</option>'+
+        '<option value="location">Location</option><option value="supplier">Supplier signature</option>'+
+      '</select></div>'+
+      '<div><span class="lbl">Supplier (optional)</span><input class="inp" id="kbSupplier" placeholder="leave blank for any supplier"></div>'+
+      '<div><span class="lbl">Supplier\'s wording</span><input class="inp" id="kbPattern" placeholder="Ford Taurus or Similar"></div>'+
+      '<div><span class="lbl">Standard value</span><input class="inp" id="kbValue" placeholder="Sedan"></div>'+
+    '</div>'+
+    '<div class="actions"><button class="btn" id="kbAddBtn">Add mapping</button>'+
+      '<span style="font-size:12px;color:var(--ink-60)" id="kbMsg"></span></div>'+
+    '<div class="field" style="margin-top:14px"><span class="lbl">Search</span>'+
+      '<input class="inp" id="kbSearch" placeholder="filter by supplier, wording or value" value="'+esc(state.kbSearch||"")+'"></div>'+
+    '<div class="scroll"><table class="tbl"><thead><tr><th>Type</th><th>Supplier</th>'+
+      '<th>Supplier\'s wording</th><th>Standard value</th><th></th></tr></thead>'+
+      '<tbody>'+(body||'<tr><td colspan="5" class="hint" style="padding:14px">No mappings yet — they\'re added automatically when you approve a correction, or add one above.</td></tr>')+'</tbody></table></div>'+
+    '</div>';
+}
+
+function renderMain() {
+  var main = el("main");
+  if (state.tab === "kb") { main.innerHTML = renderKb(); return; }
+  if (!state.quotes.length) {
+    main.innerHTML = '<div class="empty">No quotations yet.<br>' +
+      'Drop a supplier quotation on the left and the extracted lines land here.</div>';
+    return;
+  }
+  if (state.tab === "data") main.innerHTML = renderTable();
+  else if (state.tab === "quotes") main.innerHTML = renderQuotes();
+  else main.innerHTML = renderCompare();
+}
+
+function renderAll() {
+  renderCounts();
+  renderTabs();
+  renderMain();
+  logoIdle();
+  el("exportPanel").classList.toggle("hidden", !state.quotes.length);
+}
+
+/* ------------------------------ wiring ------------------------------ */
+
+el("drop").addEventListener("click", function () { el("picker").click(); });
+el("picker").addEventListener("change", function (e) {
+  handleFiles(e.target.files);
+  e.target.value = "";
+});
+["dragover","dragenter"].forEach(function (ev) {
+  el("drop").addEventListener(ev, function (e) { e.preventDefault(); el("drop").classList.add("on"); });
+});
+["dragleave","dragend"].forEach(function (ev) {
+  el("drop").addEventListener(ev, function () { el("drop").classList.remove("on"); });
+});
+el("drop").addEventListener("drop", function (e) {
+  e.preventDefault();
+  el("drop").classList.remove("on");
+  handleFiles(e.dataTransfer.files);
+});
+document.addEventListener("dragover", function (e) { e.preventDefault(); });
+document.addEventListener("drop", function (e) { e.preventDefault(); });
+
+el("tabs").addEventListener("click", function (e) {
+  var t = e.target.getAttribute("data-tab");
+  if (!t) return;
+  state.tab = t;
+  renderTabs();
+  renderMain();
+});
+
+el("main").addEventListener("click", function (e) {
+  var v = e.target.getAttribute("data-view");
+  if (v) { state.view = v; renderMain(); return; }
+  var eqid = e.target.getAttribute("data-edit-quote");
+  if (eqid) { openEditQuote(eqid); return; }
+  var cqid = e.target.getAttribute("data-copy-quote");
+  if (cqid) {
+    var q = state.quotes.find(function (x) { return x.id === cqid; });
+    var tsv = tsvForQuote(cqid);
+    copyText(tsv).then(function (ok) {
+      if (ok) toast("Copied " + (q ? q.quoteNumber : "quote") + " — paste straight into Excel");
+      else openSheet("Select all, copy, then paste into Excel", tsv);
+    });
+    return;
+  }
+  var rid = e.target.getAttribute("data-remove");
+  if (rid) {
+    state.quotes = state.quotes.filter(function (q) { return q.id !== rid; });
+    save();
+    renderAll();
+    return;
+  }
+  var kid = e.target.getAttribute("data-kb-del");
+  if (kid) {
+    kb.cache = kb.cache.filter(function (r) { return r.id !== kid; });
+    kbDelete(kid).catch(function () {});
+    renderMain();
+    return;
+  }
+  if (e.target.id === "kbAddBtn") {
+    var type = el("kbType").value, supplier = el("kbSupplier").value.trim(),
+        pattern = el("kbPattern").value.trim(), value = el("kbValue").value.trim();
+    if (!pattern || !value) { el("kbMsg").textContent = "Both a pattern and a value are needed."; return; }
+    kbRemember(type, pattern, value, supplier || null).then(function () {
+      el("kbPattern").value = ""; el("kbValue").value = ""; el("kbMsg").textContent = "";
+      renderMain();
+    });
+  }
+});
+
+el("main").addEventListener("input", function (e) {
+  var f = e.target.getAttribute("data-edit");
+  var id = e.target.getAttribute("data-id");
+  if (f && id) {
+    state.quotes.forEach(function (q) {
+      if (q.id === id) q[f] = e.target.value.trim() || "N/A";
+    });
+    save();
+    renderCounts();
+    renderTabs();
+    return;
+  }
+  if (e.target.id === "kbSearch") { state.kbSearch = e.target.value; renderMain(); var s=el("kbSearch"); if(s){ s.focus(); s.value=state.kbSearch; s.setSelectionRange(s.value.length,s.value.length); } }
+});
+
+el("clearJobs").addEventListener("click", function () { state.jobs = []; renderJobs(); });
+
+el("btnCopy").addEventListener("click", function () {
+  var tsv = asTsv();
+  copyText(tsv).then(function (ok) {
+    if (ok) toast("Copied — paste straight into Excel");
+    else openSheet("Select all, copy, then paste into Excel", tsv);
+  });
+});
+
+el("btnCsv").addEventListener("click", function () {
+  try {
+    var url = URL.createObjectURL(new Blob(["\ufeff" + asCsv()], { type:"text/csv;charset=utf-8;" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = state.view === "master" ? "procurement_master.csv" : "procurement_detail.csv";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    toast("CSV downloaded");
+  } catch (e) {
+    openSheet("Downloads are blocked here — copy this into a .csv file", asCsv());
+  }
+});
+
+el("btnBackup").addEventListener("click", function () {
+  var backup = {
+    format: "quote-desk-backup", version: 1, exported: new Date().toISOString(),
+    quotes: state.quotes, knowledge: kb.cache
+  };
+  try {
+    var url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type:"application/json" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "quote-desk-backup-" + new Date().toISOString().slice(0,10) + ".json";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    toast("Backup downloaded — " + state.quotes.length + " quotation(s), " + kb.cache.length + " mapping(s)");
+  } catch (e) {
+    openSheet("Downloads are blocked here — copy this JSON into a .json file", JSON.stringify(backup, null, 2));
+  }
+});
+
+el("btnRestoreBtn").addEventListener("click", function () { el("restoreFile").click(); });
+el("restoreFile").addEventListener("change", function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    var data;
+    try { data = JSON.parse(String(reader.result)); }
+    catch (err) { el("restoreMsg").textContent = "That file isn't valid JSON."; return; }
+    if (!data || data.format !== "quote-desk-backup") {
+      el("restoreMsg").textContent = "That doesn't look like a Quote Desk backup file.";
+      return;
+    }
+    var addQuotes = Array.isArray(data.quotes) ? data.quotes.length : 0;
+    var addMappings = Array.isArray(data.knowledge) ? data.knowledge.length : 0;
+    if (!window.confirm("Restore " + addQuotes + " quotation(s) and " + addMappings +
+        " mapping(s)? This adds to what's already here — it does not erase your current data.")) return;
+
+    if (Array.isArray(data.quotes)) {
+      var haveIds = {};
+      state.quotes.forEach(function (q) { haveIds[q.id] = true; });
+      data.quotes.forEach(function (q) { if (!haveIds[q.id]) state.quotes.push(q); });
+      save();
+    }
+    var puts = [];
+    if (Array.isArray(data.knowledge)) {
+      var haveKb = {};
+      kb.cache.forEach(function (r) { haveKb[r.id] = true; });
+      data.knowledge.forEach(function (r) {
+        if (!haveKb[r.id]) { kb.cache.push(r); puts.push(kbPut(r)); }
+      });
+    }
+    Promise.all(puts).catch(function () {}).then(function () {
+      el("restoreMsg").textContent = "Restored " + addQuotes + " quotation(s) and " + addMappings + " mapping(s).";
+      renderAll();
+    });
+    el("restoreFile").value = "";
+  };
+  reader.onerror = function () { el("restoreMsg").textContent = "Could not read that file."; };
+  reader.readAsText(file);
+});
+
+el("btnShow").addEventListener("click", function () {
+  openSheet("Select all, copy, then paste into Excel", asTsv());
+});
+el("btnJson").addEventListener("click", function () {
+  openSheet("Machine-readable JSON", asJson());
+});
+el("btnClear").addEventListener("click", function () {
+  if (!window.confirm("Remove all extracted quotes? This cannot be undone.")) return;
+  state.quotes = [];
+  save();
+  renderAll();
+});
+
+el("sheetClose").addEventListener("click", function () { el("veil").classList.add("hidden"); });
+el("veil").addEventListener("click", function (e) {
+  if (e.target === el("veil")) el("veil").classList.add("hidden");
+});
+el("sheetCopy").addEventListener("click", function () {
+  copyText(el("sheetText").value).then(function (ok) {
+    toast(ok ? "Copied" : "Use Ctrl+C — the text is already selected");
+  });
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    el("veil").classList.add("hidden");
+    el("manualVeil").classList.add("hidden");
+  }
+});
+
+/* ------------------------- manual entry (offline) ------------------------- */
+
+/* ------------------------------ review screen ------------------------------ */
+
+state.reviewQueue = [];
+
+function confBadge(c){
+  if(!isNum(c)) return '<span class="flag">N/A</span>';
+  var cls = c>=90?"":(c>=70?"rev":"bad");
+  var label = c>=90?"HIGH":(c>=70?"MEDIUM":"LOW");
+  return '<span class="flag '+cls+'" style="'+(cls===""?"background:var(--teal-soft);color:var(--teal)":"")+'">'+label+'</span>';
+}
+function needsReview(quote){
+  return quote.items.some(function(it){
+    return (isNum(it.confidence)&&it.confidence<70) ||
+      it.vehicle_normalized==="NEEDS REVIEW" || it.rate_basis==="NEEDS REVIEW";
+  });
+}
+function renderReviewTable(){
+  var q = state.reviewQueue[0];
+  if(!q) return;
+  el("reviewIntro").textContent = "From " + q.attachment + " — supplier " + q.supplier +
+    ". Check the normalized Vehicle and Rate Basis columns below; edit anything wrong, then approve.";
+  var rows = q.items.map(function(it, i){
+    return '<tr>'+
+      '<td class="mono">'+esc(it.item_name)+'</td>'+
+      '<td class="wide">'+esc(it.description)+'</td>'+
+      '<td><input class="inp" data-i="'+i+'" data-f="vehicle_normalized" value="'+esc(it.vehicle_normalized)+'"></td>'+
+      '<td><input class="inp" data-i="'+i+'" data-f="rate_basis" value="'+esc(it.rate_basis)+'"></td>'+
+      '<td class="n">'+confBadge(it.confidence)+'</td>'+
+      '<td style="text-align:center"><input type="checkbox" data-i="'+i+'" class="remember-cb" '+
+        (it.confidence<95?'checked':'')+'></td>'+
+    '</tr>';
+  }).join("");
+  el("reviewTable").innerHTML =
+    '<thead><tr><th>Item</th><th>Description</th><th>Vehicle (normalized)</th>'+
+    '<th>Rate basis</th><th class="n">Confidence</th><th>Remember</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>';
+  el("reviewMsg").textContent = state.reviewQueue.length>1 ?
+    (state.reviewQueue.length-1)+" more quotation(s) waiting after this one." : "";
+}
+function openReview(quote){
+  state.reviewQueue.push(quote);
+  if(state.reviewQueue.length===1){
+    renderReviewTable();
+    el("reviewVeil").classList.remove("hidden");
+  }
+}
+function closeReviewIfEmpty(){
+  if(!state.reviewQueue.length){ el("reviewVeil").classList.add("hidden"); return; }
+  renderReviewTable();
+}
+el("reviewTable").addEventListener("input", function(e){
+  var t = e.target, i = t.getAttribute("data-i"), f = t.getAttribute("data-f");
+  if(i===null||!f) return;
+  state.reviewQueue[0].items[i][f] = t.value;
+});
+el("reviewApprove").addEventListener("click", function(){
+  var q = state.reviewQueue.shift();
+  var supplier = q.supplier;
+  var puts = [];
+  q.items.forEach(function(it, i){
+    var cb = el("reviewTable").querySelector('.remember-cb[data-i="'+i+'"]');
+    if(cb && cb.checked){
+      var basis = (it.item_name||"")+" "+(it.description||"")+" "+(it.duration_unit||"");
+      if(it.vehicle_normalized && it.vehicle_normalized!=="N/A" && it.vehicle_normalized!=="NEEDS REVIEW"){
+        var vpat = (it.item_name||it.description||"").slice(0,60);
+        if(vpat.trim()) puts.push(kbRemember("vehicle", vpat, it.vehicle_normalized, supplier));
+      }
+      if(it.rate_basis && it.rate_basis!=="N/A" && it.rate_basis!=="NEEDS REVIEW"){
+        var rpat = (it.duration_unit||it.description||"").slice(0,60);
+        if(rpat.trim()) puts.push(kbRemember("rate", rpat, it.rate_basis, supplier));
+      }
+      it.confidence = 95;
+    }
+  });
+  state.quotes.push(q);
+  save();
+  Promise.all(puts).catch(function(){}).then(function(){
+    toast(q.items.length+" line(s) added"+(puts.length?", "+puts.length+" mapping(s) remembered":""));
+  });
+  state.tab = "data";
+  renderAll();
+  closeReviewIfEmpty();
+});
+el("reviewReject").addEventListener("click", function(){
+  state.reviewQueue.shift();
+  closeReviewIfEmpty();
+});
+el("reviewClose").addEventListener("click", function(){
+  state.reviewQueue.shift();
+  closeReviewIfEmpty();
+});
+
+function splitRow(line) {
+  if (line.indexOf("\t") !== -1) return line.split("\t");
+  if (line.indexOf(",") !== -1) return line.split(",");
+  return line.split(/\s{2,}/);
+}
+
+/* ------------------------------ read it differently ------------------------------ */
+
+var RD_ROLES = [
+  ["ignore", "Ignore"], ["item", "Item"], ["description", "Description"],
+  ["spec", "Specification"], ["days", "Days"], ["qty", "Qty"], ["unit", "Unit"],
+  ["rate", "Unit Price"], ["total", "Total"], ["category", "Category"], ["type", "Item Type"]
+];
+
+function rdGuessColumnRole(colIndex, rows) {
+  /* look at the first several rows for header-like text in this column */
+  for (var r = 0; r < Math.min(rows.length, 6); r++) {
+    var cell = (rows[r][colIndex] || "").trim();
+    if (!cell) continue;
+    var key = HEADER_MAP[normHeader(cell)];
+    if (key === "quote" || key === "supplier" || key === "project" || key === "region" || key === "currency") continue;
+    if (key) return key;
+  }
+  return "ignore";
+}
+
+function rdGuessRowIncluded(cells, roleByCol) {
+  var joined = cells.join(" ").trim();
+  if (!joined) return false;
+  if (/^\s*(total|sub\s*total|grand\s*total|vat|tax|terms|payment|note|notes|condition|conditions|signature|page\s*\d)/i.test(cells[0] || "")) return false;
+  var pricedColFilled = false, itemColFilled = false;
+  Object.keys(roleByCol).forEach(function (ci) {
+    var role = roleByCol[ci], val = (cells[ci] || "").trim();
+    if (!val) return;
+    if ((role === "rate" || role === "total" || role === "qty") && num(val) !== null) pricedColFilled = true;
+    if (role === "item" || role === "description") itemColFilled = true;
+  });
+  return pricedColFilled && itemColFilled;
+}
+
+function rdRoleMap() {
+  return state.rdRoleByCol || {};
+}
+
+function rdUpdateSubtitle() {
+  var total = state.rdRows ? state.rdRows.length : 0;
+  var ticked = Object.keys(state.rdIncluded || {}).filter(function (k) { return state.rdIncluded[k]; }).length;
+  el("rdSubtitle").textContent = total + " rows in " + state.rdSource + ", " + ticked + " ticked as line items.";
+}
+
+/* Rebuilds only the header row of column-role dropdowns, from the current
+   persisted roleByCol. Only called once, when the screen first opens —
+   never on every edit, which is what was wiping out manual selections. */
+function rdRenderHead() {
+  var colCount = state.rdColCount;
+  var roleByCol = state.rdRoleByCol;
+  var head = '<thead><tr><th style="width:32px"></th>' +
+    Array.from({ length: colCount }).map(function (_, c) {
+      var opts = RD_ROLES.map(function (r) {
+        return '<option value="' + r[0] + '"' + (r[0] === roleByCol[c] ? " selected" : "") + '>' + r[1] + '</option>';
+      }).join("");
+      return '<th><select class="inp" data-col="' + c + '" style="font-size:12px;padding:5px 7px">' + opts + '</select></th>';
+    }).join("") + '</tr></thead>';
+  el("rdTable").insertAdjacentHTML("afterbegin", head);
+}
+
+/* Rebuilds only the data rows, from the current persisted included-state.
+   Safe to call as often as needed — it never touches the header dropdowns,
+   so a teammate's column-role choices are never discarded mid-edit. */
+function rdRenderBody() {
+  var rows = state.rdRows, colCount = state.rdColCount;
+  var oldTbody = el("rdTable").querySelector("tbody");
+  if (oldTbody) oldTbody.remove();
+  var body = '<tbody>' + rows.map(function (cells, ri) {
+    var included = !!state.rdIncluded[ri];
+    var cls = included ? "" : ' style="color:var(--ink-30)"';
+    return '<tr' + cls + ' data-row="' + ri + '">' +
+      '<td><input type="checkbox" data-rd-row="' + ri + '"' + (included ? " checked" : "") + '></td>' +
+      Array.from({ length: colCount }).map(function (_, c) {
+        return '<td class="mono">' + esc(cells[c] || "") + '</td>';
+      }).join("") + '</tr>';
+  }).join("") + '</tbody>';
+  el("rdTable").insertAdjacentHTML("beforeend", body);
+  rdUpdateSubtitle();
+}
+
+/* Re-runs the row-inclusion guess using the current column-role mapping,
+   but only for rows the person hasn't manually ticked/unticked themselves —
+   so changing a column from Ignore to Unit Price can newly catch rows that
+   should now be included, without undoing anyone's manual corrections. */
+function rdReguessIncluded() {
+  var roleByCol = state.rdRoleByCol;
+  state.rdRows.forEach(function (cells, ri) {
+    if (state.rdManualRow[ri]) return;
+    state.rdIncluded[ri] = rdGuessRowIncluded(cells, roleByCol);
+  });
+}
+
+var EQ_FIELDS = { quoteNumber:"eqQuoteNumber", supplier:"eqSupplier", customer:"eqCustomer",
+  projectCode:"eqProjectCode", projectName:"eqProjectName", region:"eqRegion", currency:"eqCurrency",
+  reference:"eqReference", validUntil:"eqValidUntil", paymentTerms:"eqPaymentTerms",
+  deliveryTerms:"eqDeliveryTerms", deliveryLocation:"eqDeliveryLocation" };
+
+function eqCalcStatusFor(days, qty, rate, printed) {
+  var total = totalValue(days, qty, rate);
+  if (!isNum(total) || !isNum(printed)) return { total:total, status:"NOT_CALCULABLE" };
+  var diff = Math.abs(total - printed);
+  return { total:total, status: diff < 0.01 ? "MATCH" : (diff <= 1 ? "MINOR_DIFFERENCE" : "MISMATCH") };
+}
+
+function renderEqItemsTable(q) {
+  var cols = '<colgroup><col style="width:17%"><col style="width:30%"><col style="width:8%">' +
+    '<col style="width:6%"><col style="width:6%"><col style="width:10%">' +
+    '<col style="width:12%"><col style="width:11%"></colgroup>';
+  var head = '<thead><tr><th>Item</th><th>Description</th><th>Category</th>' +
+    '<th class="n">Days</th><th class="n">Qty</th><th class="n">Unit Price</th>' +
+    '<th class="n">Total</th><th>Check</th></tr></thead>';
+  var body = '<tbody>' + q.items.map(function (it, i) {
+    var printed = isNum(it.line_total) ? it.line_total : num(it.line_total);
+    var calc = eqCalcStatusFor(it.days, it.qty, it.rate, printed);
+    return '<tr data-eq-row="' + i + '">' +
+      '<td><input class="inp" data-eqf="item_name" data-i="' + i + '" value="' + esc(it.item_name) + '" title="' + esc(it.item_name) + '"></td>' +
+      '<td><input class="inp" data-eqf="description" data-i="' + i + '" value="' + esc(it.description) + '" title="' + esc(it.description) + '"></td>' +
+      '<td><input class="inp" data-eqf="category" data-i="' + i + '" value="' + esc(it.category) + '"></td>' +
+      '<td><input class="inp n" data-eqf="days" data-i="' + i + '" value="' + esc(it.days) + '"></td>' +
+      '<td><input class="inp n" data-eqf="qty" data-i="' + i + '" value="' + esc(it.qty) + '"></td>' +
+      '<td><input class="inp n" data-eqf="rate" data-i="' + i + '" value="' + esc(isNum(it.rate) ? it.rate : "") + '"></td>' +
+      '<td class="n mono" data-eq-total="' + i + '">' + esc(fmtNum(calc.total)) + '</td>' +
+      '<td data-eq-status="' + i + '"><span class="flag' +
+        (calc.status === "MISMATCH" ? " bad" : calc.status === "MINOR_DIFFERENCE" ? " rev" : "") + '">' +
+        calc.status + '</span></td>' +
+    '</tr>';
+  }).join("") + '</tbody>';
+  el("eqItemsTable").innerHTML = cols + head + body;
+}
+
+el("eqItemsTable").addEventListener("input", function (e) {
+  var i = e.target.getAttribute("data-i");
+  if (i === null) return;
+  var q = state.quotes.find(function (x) { return x.id === state.editingQuoteId; });
+  if (!q) return;
+  var it = q.items[i];
+  function row(f) {
+    var input = el("eqItemsTable").querySelector('input[data-eqf="' + f + '"][data-i="' + i + '"]');
+    return input ? input.value : "";
+  }
+  var days = num(row("days")), qty = num(row("qty")), rate = num(row("rate"));
+  var printed = isNum(it.line_total) ? it.line_total : num(it.line_total);
+  var calc = eqCalcStatusFor(days, qty, rate, printed);
+  el("eqItemsTable").querySelector('[data-eq-total="' + i + '"]').textContent = fmtNum(calc.total);
+  var statusCell = el("eqItemsTable").querySelector('[data-eq-status="' + i + '"]');
+  statusCell.innerHTML = '<span class="flag' +
+    (calc.status === "MISMATCH" ? " bad" : calc.status === "MINOR_DIFFERENCE" ? " rev" : "") + '">' +
+    calc.status + '</span>';
+});
+
+function openEditQuote(quoteId) {
+  var q = state.quotes.find(function (x) { return x.id === quoteId; });
+  if (!q) return;
+  state.editingQuoteId = quoteId;
+  Object.keys(EQ_FIELDS).forEach(function (f) {
+    el(EQ_FIELDS[f]).value = isMissing(q[f]) ? "" : q[f];
+  });
+  renderEqItemsTable(q);
+  el("editQuoteVeil").classList.remove("hidden");
+}
+
+el("eqCancel").addEventListener("click", function () {
+  el("editQuoteVeil").classList.add("hidden");
+});
+el("editQuoteVeil").addEventListener("click", function (e) {
+  if (e.target === el("editQuoteVeil")) el("editQuoteVeil").classList.add("hidden");
+});
+el("eqSave").addEventListener("click", function () {
+  var q = state.quotes.find(function (x) { return x.id === state.editingQuoteId; });
+  if (!q) { el("editQuoteVeil").classList.add("hidden"); return; }
+
+  Object.keys(EQ_FIELDS).forEach(function (f) {
+    var v = el(EQ_FIELDS[f]).value.trim();
+    q[f] = v || "N/A";
+  });
+
+  q.items.forEach(function (it, i) {
+    function cell(f) {
+      var input = el("eqItemsTable").querySelector('input[data-eqf="' + f + '"][data-i="' + i + '"]');
+      return input ? input.value.trim() : "";
+    }
+    it.item_name = cell("item_name") || "N/A";
+    it.description = cell("description") || "N/A";
+    it.category = cell("category") || "Other";
+    var days = num(cell("days")), qty = num(cell("qty")), rate = num(cell("rate"));
+    it.days = days !== null ? days : 1;
+    it.qty = qty !== null ? qty : 1;
+    it.daysAssumed = days === null;
+    it.qtyAssumed = qty === null;
+    it.rate = rate !== null ? rate : "UNREADABLE";
+
+    var printed = isNum(it.line_total) ? it.line_total : num(it.line_total);
+    var calc = eqCalcStatusFor(it.days, it.qty, it.rate, printed);
+    it.calculated_total = calc.total;
+    it.calculation_status = calc.status;
+    normalizeItem(it, q.supplier);
+  });
+
+  q.needsReview = q.items.some(function (it) {
+    return it.calculation_status === "MISMATCH" || (isNum(it.confidence) && it.confidence < 70);
+  });
+
+  save();
+  el("editQuoteVeil").classList.add("hidden");
+  renderAll();
+  toast("Quote updated");
+});
+
+function openReadDifferently(sourceName, rows) {
+  state.rdSource = sourceName;
+  state.rdRows = rows;
+  state.rdColCount = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+
+  state.rdRoleByCol = {};
+  for (var c = 0; c < state.rdColCount; c++) state.rdRoleByCol[c] = rdGuessColumnRole(c, rows);
+
+  state.rdManualRow = {};
+  state.rdIncluded = {};
+  rdReguessIncluded();
+
+  el("rdQuote").value = ""; el("rdSupplier").value = "";
+  el("rdProject").value = el("defProject") ? el("defProject").value.trim() : "";
+  el("rdProjectName").value = "";
+  el("rdRegion").value = el("defRegion") ? el("defRegion").value.trim() : "";
+  el("rdCurrency").value = "";
+
+  el("rdTable").innerHTML = "";
+  rdRenderHead();
+  rdRenderBody();
+  el("readDiffVeil").classList.remove("hidden");
+}
+
+el("rdTable").addEventListener("change", function (e) {
+  if (e.target.matches("select[data-col]")) {
+    var col = e.target.getAttribute("data-col");
+    state.rdRoleByCol[col] = e.target.value;
+    rdReguessIncluded();
+    rdRenderBody();
+    return;
+  }
+  if (e.target.matches("input[type=checkbox]")) {
+    var ri = e.target.getAttribute("data-rd-row");
+    state.rdManualRow[ri] = true;
+    state.rdIncluded[ri] = e.target.checked;
+    var tr = e.target.closest("tr");
+    tr.style.color = e.target.checked ? "" : "var(--ink-30)";
+    rdUpdateSubtitle();
+  }
+});
+
+function buildReadDifferentlyQuote() {
+  var roleByCol = rdRoleMap();
+  var colOf = {};
+  Object.keys(roleByCol).forEach(function (c) {
+    if (roleByCol[c] !== "ignore" && colOf[roleByCol[c]] === undefined) colOf[roleByCol[c]] = +c;
+  });
+  if (colOf.rate === undefined && colOf.total === undefined)
+    throw new Error("Map at least one column to Unit Price or Total.");
+
+  var supplier = el("rdSupplier").value.trim() || "N/A";
+  var checked = Array.from(document.querySelectorAll("#rdTable tbody input[type=checkbox]:checked"))
+    .map(function (cb) { return +cb.getAttribute("data-rd-row"); });
+  if (!checked.length) throw new Error("No rows are ticked as line items.");
+
+  function cell(cells, key) {
+    return colOf[key] === undefined ? "" : (cells[colOf[key]] || "").trim();
+  }
+
+  var items = checked.map(function (ri, i) {
+    var cells = state.rdRows[ri];
+    var days = num(cell(cells, "days"));
+    var qty = num(cell(cells, "qty"));
+    var rate = num(cell(cells, "rate"));
+    var printed = colOf.total !== undefined ? num(cell(cells, "total")) : null;
+
+    var row = {
+      line_number: i + 1,
+      type: cell(cells, "type") || "Unknown",
+      category: cell(cells, "category") || "Other",
+      item_name: cell(cells, "item") || "N/A",
+      description: cell(cells, "description") || "N/A",
+      specification: cell(cells, "spec") || "N/A",
+      unit: cell(cells, "unit") || "N/A",
+      duration_unit: days !== null ? "Days" : "N/A",
+      discount: 0, tax_rate: null, tax_amount: null,
+      confidence: null,
+      remarks: "Read differently from " + state.rdSource + ".",
+      page: 0,
+      line_total: printed !== null ? printed : "N/A",
+      rate: rate !== null ? rate : "UNREADABLE",
+      qty: qty !== null ? qty : 1,
+      days: days !== null ? days : 1,
+      qtyAssumed: qty === null,
+      daysAssumed: days === null
+    };
+    row.calculated_total = totalValue(row.days, row.qty, row.rate);
+    if (isNum(row.calculated_total) && isNum(printed)) {
+      var diff = Math.abs(row.calculated_total - printed);
+      row.calculation_status = diff < 0.01 ? "MATCH" : (diff <= 1 ? "MINOR_DIFFERENCE" : "MISMATCH");
+    } else {
+      row.calculation_status = "NOT_CALCULABLE";
+    }
+    normalizeItem(row, supplier);
+    return row;
+  });
+
+  var priced = items.filter(function (i) { return isNum(i.calculated_total); });
+  if (!priced.length) throw new Error("No usable Unit Price/Total mapping — check the column dropdowns.");
+
+  var exceptions = [];
+  items.forEach(function (i) {
+    if (i.calculation_status === "MISMATCH")
+      exceptions.push("Line " + i.line_number + " (" + i.item_name + "): calculated " +
+        fmtNum(i.calculated_total) + " against read " + fmtNum(i.line_total) + ".");
+  });
+
+  function fld(id, fallback) {
+    var v = el(id).value.trim();
+    return v || fallback;
+  }
+
+  return {
+    id: "readdiff:" + Date.now() + ":" + Math.random().toString(36).slice(2, 7),
+    attachment: state.rdSource,
+    quoteNumber: fld("rdQuote", "N/A"),
+    supplier: supplier,
+    customer: "N/A", projectName: fld("rdProjectName", "N/A"),
+    projectCode: fld("rdProject", "N/A"),
+    region: fld("rdRegion", "N/A"),
+    reference: "N/A", validUntil: "N/A",
+    currency: fld("rdCurrency", "N/A"),
+    paymentTerms: "N/A", deliveryTerms: "N/A", deliveryLocation: "N/A",
+    subtotal: null, discountTotal: null, vatRate: null, vatAmount: null,
+    additionalCharges: null, grandTotal: null,
+    totalStatus: "NOT_CALCULABLE",
+    needsReview: exceptions.length > 0,
+    exceptions: exceptions,
+    items: items
+  };
+}
+
+el("rdCancel").addEventListener("click", function () { el("readDiffVeil").classList.add("hidden"); });
+el("readDiffVeil").addEventListener("click", function (e) {
+  if (e.target === el("readDiffVeil")) el("readDiffVeil").classList.add("hidden");
+});
+el("rdAdd").addEventListener("click", function () {
+  try {
+    var q = buildReadDifferentlyQuote();
+    el("readDiffVeil").classList.add("hidden");
+    openReview(q);
+  } catch (e) {
+    toast(e.message);
+  }
+});
+
+function buildManualQuote() {
+  var raw = el("mRows").value.replace(/\r/g, "").split("\n")
+    .filter(function (l) { return l.trim() !== ""; });
+  if (!raw.length) throw new Error("No line items pasted.");
+
+  /* drop a header row if the first cell looks like a column name */
+  if (/^\s*(item|line|no\.?|description|particulars)\s*$/i.test(splitRow(raw[0])[0] || ""))
+    raw = raw.slice(1);
+  if (!raw.length) throw new Error("Only a header row was pasted.");
+
+  var items = raw.map(function (line, i) {
+    var c = splitRow(line).map(function (x) { return x.trim(); });
+    var days = num(c[2]);
+    var qty = num(c[3]);
+    var rate = num(c[4]);
+    var printed = c.length > 5 ? num(c[5]) : null;
+
+    var row = {
+      line_number: i + 1,
+      type: "Unknown",
+      category: c[6] || "Other",
+      item_name: c[0] || "N/A",
+      description: c[1] || "N/A",
+      specification: "N/A",
+      unit: "N/A",
+      duration_unit: days !== null ? "Days" : "N/A",
+      discount: 0, tax_rate: null, tax_amount: null,
+      confidence: null,
+      remarks: "Entered by hand.",
+      page: 0,
+      line_total: printed !== null ? printed : "N/A",
+      rate: rate !== null ? rate : "UNREADABLE",
+      qty: qty !== null ? qty : 1,
+      days: days !== null ? days : 1,
+      qtyAssumed: qty === null,
+      daysAssumed: days === null
+    };
+    row.calculated_total = totalValue(row.days, row.qty, row.rate);
+    if (isNum(row.calculated_total) && isNum(printed)) {
+      var diff = Math.abs(row.calculated_total - printed);
+      row.calculation_status = diff < 0.01 ? "MATCH" : (diff <= 1 ? "MINOR_DIFFERENCE" : "MISMATCH");
+    } else {
+      row.calculation_status = "NOT_CALCULABLE";
+    }
+    normalizeItem(row, el("mSupplier").value.trim() || "N/A");
+    return row;
+  });
+
+  var priced = items.filter(function (i) { return isNum(i.calculated_total); });
+  if (!priced.length) throw new Error("No usable Value column found — check the column order.");
+
+  var exceptions = [];
+  items.forEach(function (i) {
+    if (i.calculation_status === "MISMATCH")
+      exceptions.push("Line " + i.line_number + " (" + i.item_name + "): calculated " +
+        fmtNum(i.calculated_total) + " against entered " + fmtNum(i.line_total) + ".");
+  });
+  var dd = items.filter(function (i) { return i.daysAssumed; }).length;
+  var dq = items.filter(function (i) { return i.qtyAssumed; }).length;
+  if (dd) exceptions.push(dd + " line(s) had no duration — set to 1.");
+  if (dq) exceptions.push(dq + " line(s) had no quantity — set to 1.");
+
+  function fld(id, fallback) {
+    var v = el(id).value.trim();
+    return v || fallback;
+  }
+
+  return {
+    id: "manual:" + Date.now() + ":" + Math.random().toString(36).slice(2, 7),
+    attachment: "Entered by hand",
+    quoteNumber: fld("mQuote", "N/A"),
+    supplier: fld("mSupplier", "N/A"),
+    customer: "N/A", projectName: "N/A",
+    projectCode: fld("mProject", el("defProject").value.trim() || "N/A"),
+    region: fld("mRegion", el("defRegion").value.trim() || "N/A"),
+    reference: "N/A", validUntil: "N/A",
+    currency: fld("mCurrency", "N/A"),
+    paymentTerms: "N/A", deliveryTerms: "N/A", deliveryLocation: "N/A",
+    subtotal: null, discountTotal: null, vatRate: null, vatAmount: null,
+    additionalCharges: null, grandTotal: null,
+    totalStatus: "NOT_CALCULABLE",
+    needsReview: exceptions.length > 0,
+    exceptions: exceptions,
+    items: items
+  };
+}
+
+function openManual(sourceName, prefill) {
+  el("manualMsg").textContent = "";
+  if (prefill !== undefined) {
+    el("mRows").value = prefill;
+    el("manualTitle").textContent = "Read from " + sourceName + " — check before adding";
+    el("manualMsg").textContent =
+      "Rows were rebuilt from the PDF layout. Delete anything that is not a line item and " +
+      "arrange the columns as Item, Description, Days, Qty, Value.";
+  } else {
+    el("manualTitle").textContent = "Enter a quotation by hand";
+  }
+  el("manualVeil").classList.remove("hidden");
+  el("mQuote").focus();
+}
+
+el("btnManual").addEventListener("click", function () { openManual(); });
+el("manualClose").addEventListener("click", function () {
+  el("manualVeil").classList.add("hidden");
+});
+el("manualVeil").addEventListener("click", function (e) {
+  if (e.target === el("manualVeil")) el("manualVeil").classList.add("hidden");
+});
+el("manualAdd").addEventListener("click", function () {
+  try {
+    var q = buildManualQuote();
+    el("manualVeil").classList.add("hidden");
+    ["mQuote","mSupplier","mCurrency","mRows"].forEach(function (id) { el(id).value = ""; });
+    openReview(q);
+  } catch (e) {
+    el("manualMsg").textContent = e.message;
+  }
+});
+
+/* boot */
+
+state.kbSearch = "";
+kbLoad().catch(function () {});
+store.get(STORAGE_KEY).then(function (v) {
+  if (v) {
+    try { state.quotes = JSON.parse(v) || []; } catch (e) { state.quotes = []; }
+  }
+  renderAll();
+});
+kb.ready.then(function () { if (state.tab === "kb") renderMain(); }).catch(function () {});
+</script>
+</body>
+</html>
